@@ -1,0 +1,22 @@
+(y_{i} - P_{i})² = y_{i}² - 2*y_{i}*P_{i} + P_{i}² = y_{i}² + P_{i}² - 2*y_{i}*P_{i}
+
+
+(1/n)(y_{i} - P_{i})² = (1/n)(y_{i}² + Pi² - 2*y_{i}*P_{i})
+
+onde P_{i} = sum_{j=1}^{k}(w_{j}*ŷ_{ij})
+
+w = (w_{1}, w_{2}, \dots, w_{k})
+\hat{Y} = (\hat{y}_{1}, \hat{y}_{2}, \dots, \hat{y}_{k})
+Y = (y_{1}, y_{2}, \dots, y_{n})
+
+mse = (Y - \hat{Y}w)^{T}(Y - \hat{Y}w) = Y^{T}Y - 2Y^{T}\hat{Y}w + w^{T}\hat{Y}^{T}\hat{Y}w
+
+Quadratic problem form:
+minimize \frac{1}{2}w^{T}Pw + q^{T}w
+subject to Gw \leq h
+	   Aw = b
+	  
+Y^{T}Y é constante e pode ser ignorado para a otimização.
+Definindo P = 2\hat{Y}^{T}\hat{Y} e q = -\frac{1}{2}w^{T}\hat{Y}
+
+w^{T}\hat{Y}^{T}\hat{Y}w + (-\frac{1}{2}w^{T}\hat{Y})^{T}w
