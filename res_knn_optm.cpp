@@ -9,7 +9,7 @@
 using namespace std::chrono;
 
 int main(int argc, char* argv[]){
-    auto data = mltk::datasets::make_blobs(100, 2, 2).dataset;
+    auto data = mltk::datasets::make_blobs(500, 2, 2).dataset;
     //mltk::Data<double> data("../datasets/blobs_3d.csv");
     mltk::Timer timer;
 

@@ -7,6 +7,7 @@
 
 #ifdef THREADS_ENABLED
 #include <future>
+#include <execution>
 #endif
 #include <ufjfmltk/ufjfmltk.hpp>
 #include "alglib/optimization.h"
@@ -133,7 +134,8 @@ public:
         size_t n_learners = this->m_learners.size();
         auto kfold_splits = mltk::validation::kfoldsplit(*this->samples, folds, false, this->seed);
 #ifdef THREADS_ENABLED
-        std::vector<std::future<std::pair<size_t, arma::colvec>>> results(n_learners);
+        std::vector<std::pair<size_t, arma::colvec>> results(n_learners);
+        //std::vector<std::future<std::pair<size_t, arma::colvec>>> results(n_learners);
 #else
         std::vector<std::pair<size_t, arma::colvec>> results(n_learners);
 #endif
@@ -170,36 +172,70 @@ public:
                 Yj(j) = class_maper[test(j).Y()];
 //                Yj(j) = test(j).Y();
             }
-
             Y = arma::join_cols(Y, Yj);
-            for (size_t j = 0; j < n_learners; j++) {
+//            auto make_predictions = [&train, &test](LearnerPointer<T> learner, size_t learner_pos,
+//                                                    std::map<int, int> class_maper){
+//                arma::colvec preds(test.size(), arma::fill::zeros);
+//
+//                learner->setSamples(train);
+//                learner->train();
+//
+//                for(int i = 0; i < test.size(); i++){
+//                    preds(i) = class_maper[learner->evaluate(test(i))];
+//                    //preds(i) = learner->evaluate(test(i));
+//                }
+//                return std::make_pair(learner_pos, preds);
+//            };
+#ifdef THREADS_ENABLED
+            std::map<int, int> mapper = this->class_maper;
+            std::transform(std::execution::par, this->m_learners.begin(), this->m_learners.end(), results.begin(),
+                           [mapper, train, test] (auto& learner){
+                arma::colvec preds(test.size(), arma::fill::zeros);
+
+                learner->setSamples(train);
+                learner->train();
+
+                for(int i = 0; i < test.size(); i++){
+                    preds(i) = mapper.at(learner->evaluate(test(i)));
+                    //preds(i) = learner->evaluate(test(i));
+                }
+                return std::make_pair(0, preds);
+            });
+#else
+            std::transform(this->m_learners.begin(), this->m_learners.end(), results.begin(), [this, train, test]
+                    (auto& learner){
                 auto make_predictions = [&train, &test](LearnerPointer<T> learner, size_t learner_pos,
-                        std::map<int, int> class_maper){
+                                                        std::map<int, int> class_maper){
                     arma::colvec preds(test.size(), arma::fill::zeros);
 
                     learner->setSamples(train);
                     learner->train();
 
                     for(int i = 0; i < test.size(); i++){
-//                        preds(i) = class_maper[learner->evaluate(test(i))];
-                        preds(i) = learner->evaluate(test(i));
+                        preds(i) = class_maper[learner->evaluate(test(i))];
+                        //preds(i) = learner->evaluate(test(i));
                     }
                     return std::make_pair(learner_pos, preds);
                 };
-#ifdef THREADS_ENABLED
-                    results[j] = std::async(std::launch::async, make_predictions, this->m_learners[j], j, class_maper);
-#else
-                    results[j] = make_predictions(this->m_learners[j], j, class_maper);
+                return make_predictions(learner, 0, class_maper);
+            });
 #endif
-            }
+
+//            for (size_t j = 0; j < n_learners; j++) {
+//#ifdef THREADS_ENABLED
+//                    results[j] = std::async(std::launch::async, make_predictions, this->m_learners[j], j, class_maper);
+//#else
+//                    results[j] = make_predictions(this->m_learners[j], j, class_maper);
+//#endif
+//            }
 
             matrix Y_learners = matrix(n_learners, kfold_splits[i].test.size());
-            for (auto &res: results) {
+            for (size_t col = 0; col < results.size(); col++) {
 #ifdef THREADS_ENABLED
-                auto result = res.get();
-                Yhatj.col(result.first) = result.second;
+                //auto result = res.get();
+                Yhatj.col(col) = results[col].second;
 #else
-                Yhatj.col(res.first) = res.second;
+                Yhatj.col(col) = results[col].second;
 #endif
             }
             Yhat = arma::join_cols(Yhat, Yhatj);
