@@ -9,8 +9,8 @@
 using namespace std::chrono;
 
 int main(int argc, char* argv[]){
-    auto data = mltk::datasets::make_blobs(100, 2, 2).dataset;
-    //mltk::Data<double> data("../datasets/blobs_3d.csv");
+    //auto data = mltk::datasets::make_blobs(30, 5, 2).dataset;
+    mltk::Data<double> data("../datasets/wdbc.data");
     mltk::Timer timer;
 
     mltk::visualize::Visualization<double> vis(data);
@@ -34,6 +34,7 @@ int main(int argc, char* argv[]){
     knn_ensem.train();
     std::cout << timer.elapsed() << "ms to compute." << std::endl;
     vis.plot2D();
+    vis.plotDecisionSurface2D(knn_ensem);
     std::cin.get();
     timer.reset();
     knn_ensem.setVerbose(0);
