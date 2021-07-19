@@ -9,6 +9,7 @@ if(ENABLE_THREADS)
 endif(ENABLE_THREADS)
 
 set(CMAKE_CXX_STANDARD 17)
+set(BUILD_SHARED_LIBS OFF)
 
 include(FetchContent)
 FetchContent_Declare(
@@ -19,6 +20,7 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(ufjfmltk)
 
 add_subdirectory(alglib)
+add_subdirectory(armadillo-10.6.1)
 add_executable(knn_res_est_acc_wpdsm res_knn_est_acc_WPDSM.cpp)
 add_executable(knn_optm res_knn_optm.cpp)
 add_executable(knn_res_est_acc_hv res_knn_est_acc_HV.cpp)
@@ -29,8 +31,8 @@ find_package( Threads )
 target_link_libraries(knn_res_est_acc_wpdsm -std=c++17 ufjfmltk -ltbb ${CMAKE_THREAD_LIBS_INIT})
 target_link_libraries(knn_res_est_acc_hv -std=c++17 ufjfmltk -ltbb ${CMAKE_THREAD_LIBS_INIT})
 if(ENABLE_THREADS)
-    target_link_libraries(knn_optm -std=c++17 ufjfmltk -pthread -larmadillo alglib)
+    target_link_libraries(knn_optm -std=c++17 ufjfmltk -pthread armadillo alglib)
 else(ENABLE_THREADS)
-    target_link_libraries(knn_optm -std=c++17 ufjfmltk -larmadillo alglib)
+    target_link_libraries(knn_optm -std=c++17 ufjfmltk armadillo alglib)
 endif(ENABLE_THREADS)
 target_link_libraries(linalg_test alglib ufjfmltk)

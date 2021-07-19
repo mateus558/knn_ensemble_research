@@ -2,5 +2,6 @@
 /cmake-build-debug/CMakeFiles/
 /cmake-build-release/CMakeFiles/
 /cmake-build-release-multithreaded/CMakeFiles/
-cmake-*
+/cmake-*
 .gradle
+.idea
