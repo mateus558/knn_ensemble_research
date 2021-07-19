@@ -88,8 +88,8 @@ public:
     arma::rowvec KNNEnsembleOptm<T>::findWeights(const KNNEnsembleOptm::matrix &Yhat,
                                                                      const KNNEnsembleOptm::matrix &Y,
                                                                      const size_t n_learners, int verbose) {
-        matrix A = 2.0 * Yhat.t() * Yhat;
-        arma::rowvec b = -0.5 * Y.t() * Yhat;
+        matrix A = Yhat.t() * Yhat;
+        arma::rowvec b = -Y.t() * Yhat;
         matrix C = arma::ones(1,n_learners+1);
         arma::rowvec lower_bound = arma::rowvec(n_learners, arma::fill::zeros);
         arma::rowvec upper_bound = arma::rowvec(n_learners, arma::fill::ones);
@@ -113,7 +113,8 @@ public:
         alglib::minqpsetlc(state, C_, ct);
 
         alglib::minqpsetscaleautodiag(state);
-        alglib::minqpsetalgodenseaul(state, 1.0e-9, 1.0e+4, 12);
+        //alglib::minqpsetalgodenseaul(state, 1.0e-9, 1.0e+4, 12);
+        alglib::minqpsetalgobleic(state, 0, 0, 0, 0);
         alglib::minqpoptimize(state);
         alglib::minqpresults(state, w, rep);
         arma::rowvec W = arma::rowvec(w.getcontent(), n_learners);
@@ -243,12 +244,13 @@ public:
        // Yhat.print();
         if(this->verbose) std::cout << "\nOptimizing weights\n" << std::endl;
         w = findWeights(Yhat, Y,n_learners, this->verbose);
-        std::cout << accs << std::endl;
+        std::cout << "Accuracies: " << accs << std::endl;
         this->weights.resize(n_learners);
         this->weights = arma::conv_to<std::vector<double>>::from(w);
-        std::cout << this->weights << std::endl;
-        this->weights = (1.0-this->weights);
-        std::cout << this->weights << std::endl;
+        //std::cout << this->weights << std::endl;
+        //this->weights = (1.0-this->weights);
+        std::cout << "Weights: " <<  this->weights << std::endl;
+        std::cout << std::endl;
 
         return true;
     }
