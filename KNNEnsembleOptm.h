@@ -36,13 +36,20 @@ public:
         this->samples = mltk::make_data<T>(data);
         this->seed = seed;
         this->m_learners.resize(7);
-        this->m_learners[0] = std::make_shared<regressor::KNNRegressor<T, metrics::dist::Euclidean<T>>>(k);
-        this->m_learners[1] = std::make_shared<regressor::KNNRegressor<T, metrics::dist::Lorentzian<T>>>(k);
-        this->m_learners[2] = std::make_shared<regressor::KNNRegressor<T, metrics::dist::Cosine<T>>>(k);
-        this->m_learners[3] = std::make_shared<regressor::KNNRegressor<T, metrics::dist::Bhattacharyya<T>>>(k);
-        this->m_learners[4] = std::make_shared<regressor::KNNRegressor<T, metrics::dist::Pearson<T>>>(k);
-        this->m_learners[5] = std::make_shared<regressor::KNNRegressor<T, metrics::dist::KullbackLeibler<T>>>(k);
-        this->m_learners[6] = std::make_shared<regressor::KNNRegressor<T, metrics::dist::Hassanat<T>>>(k);
+//        this->m_learners[0] = std::make_shared<regressor::KNNRegressor<T, metrics::dist::Euclidean<T>>>(k);
+//        this->m_learners[1] = std::make_shared<regressor::KNNRegressor<T, metrics::dist::Lorentzian<T>>>(k);
+//        this->m_learners[2] = std::make_shared<regressor::KNNRegressor<T, metrics::dist::Cosine<T>>>(k);
+//        this->m_learners[3] = std::make_shared<regressor::KNNRegressor<T, metrics::dist::Bhattacharyya<T>>>(k);
+//        this->m_learners[4] = std::make_shared<regressor::KNNRegressor<T, metrics::dist::Pearson<T>>>(k);
+//        this->m_learners[5] = std::make_shared<regressor::KNNRegressor<T, metrics::dist::KullbackLeibler<T>>>(k);
+//        this->m_learners[6] = std::make_shared<regressor::KNNRegressor<T, metrics::dist::Hassanat<T>>>(k);
+        this->m_learners[0] = std::make_shared<classifier::KNNClassifier<T, metrics::dist::Euclidean<T>>>(k);
+        this->m_learners[1] = std::make_shared<classifier::KNNClassifier<T, metrics::dist::Lorentzian<T>>>(k);
+        this->m_learners[2] = std::make_shared<classifier::KNNClassifier<T, metrics::dist::Cosine<T>>>(k);
+        this->m_learners[3] = std::make_shared<classifier::KNNClassifier<T, metrics::dist::Bhattacharyya<T>>>(k);
+        this->m_learners[4] = std::make_shared<classifier::KNNClassifier<T, metrics::dist::Pearson<T>>>(k);
+        this->m_learners[5] = std::make_shared<classifier::KNNClassifier<T, metrics::dist::KullbackLeibler<T>>>(k);
+        this->m_learners[6] = std::make_shared<classifier::KNNClassifier<T, metrics::dist::Hassanat<T>>>(k);
     }
 
     bool train() override;
@@ -136,21 +143,21 @@ public:
         auto classes = this->samples->classes();
         std::cout << std::fixed << std::showpoint;
         std::cout << std::setprecision(3);
-//        if(classes.size() == 2){
-//            class_maper[classes[0]] = classes[0];
-//            class_maper[classes[1]] = classes[1];
-//        }else{
-//            for(int i = 0; i < classes.size(); i++){
-//                class_maper[classes[i]] = classes[i];
-//            }
-//        }
+        if(classes.size() == 2){
+            class_maper[classes[0]] = classes[0];
+            class_maper[classes[1]] = classes[1];
+        }else{
+            for(int i = 0; i < classes.size(); i++){
+                class_maper[classes[i]] = classes[i];
+            }
+        }
 
-//        accs.resize(n_learners);
-//        for(size_t j = 0; j < n_learners; j++){
-//            auto classifier = dynamic_cast<classifier::Classifier<T> *>(this->m_learners[j].get());
-//            auto report = validation::kkfold(*this->samples, *classifier, 10, 10, this->seed, 0);
-//            accs[j] = report.accuracy/100.0;
-//        }
+        accs.resize(n_learners);
+        for(size_t j = 0; j < n_learners; j++){
+            auto classifier = dynamic_cast<classifier::Classifier<T> *>(this->m_learners[j].get());
+            auto report = validation::kkfold(*this->samples, *classifier, 10, 10, this->seed, 0);
+            accs[j] = report.accuracy/100.0;
+        }
         for(size_t i = 0; i < kfold_splits.size(); i++) {
             auto train = kfold_splits[i].train;
             auto test = kfold_splits[i].test;
@@ -160,8 +167,8 @@ public:
             if(this->verbose) std::cout << "Fold " << i+1 << std::endl;
 
             for (int j = 0; j < test.size(); j++) {
-//                Yj(j) = class_maper[test(j).Y()];
-                Yj(j) = test(j).Y();
+                Yj(j) = class_maper[test(j).Y()];
+//                Yj(j) = test(j).Y();
             }
 
             Y = arma::join_cols(Y, Yj);
@@ -197,10 +204,10 @@ public:
             }
             Yhat = arma::join_cols(Yhat, Yhatj);
         }
-        Yhat.print();
+       // Yhat.print();
         if(this->verbose) std::cout << "\nOptimizing weights\n" << std::endl;
         w = findWeights(Yhat, Y,n_learners, this->verbose);
-        //std::cout << accs << std::endl;
+        std::cout << accs << std::endl;
         this->weights.resize(n_learners);
         this->weights = arma::conv_to<std::vector<double>>::from(w);
         std::cout << this->weights << std::endl;
@@ -220,18 +227,18 @@ public:
             if(this->weights[i] == 0) continue;
             auto pred = this->m_learners[i]->evaluate(p);
             // get prediction position
-//            size_t pred_pos = std::find_if(_classes.begin(), _classes.end(), [&pred](const auto &a) {
-//                return (a == pred);
-//            }) - _classes.begin();
-//            // count prediction as a vote
-//            votes[pred_pos] += std::abs(this->weights[i]*class_maper[pred]);
+            size_t pred_pos = std::find_if(_classes.begin(), _classes.end(), [&pred](const auto &a) {
+                return (a == pred);
+            }) - _classes.begin();
+            // count prediction as a vote
+            votes[pred_pos] += std::abs(this->weights[i]*class_maper[pred]);
             sum += this->weights[i]*class_maper[pred];
         }
         //std::cout << votes << std::endl;
         size_t max_votes = std::max_element(votes.X().begin(), votes.X().end()) - votes.X().begin();
-        //return _classes[max_votes];
-//        return (sum < 0)?-1:1;
-        return sum;
+        return _classes[max_votes];
+        return (sum < 0)?-1:1;
+        //return sum;
     }
 }
 

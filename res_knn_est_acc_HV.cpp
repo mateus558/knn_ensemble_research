@@ -5,7 +5,7 @@
 #include <execution>
 #include <tuple>
 #include <fstream>
-#include <ufjfmltk.hpp>
+#include <ufjfmltk/ufjfmltk.hpp>
 #include <map>
 #include "kNNEnsemble.hpp"
 #define DATASET_FOLDER "../datasets/"
