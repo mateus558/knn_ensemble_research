@@ -10,16 +10,10 @@ using namespace std::chrono;
 
 int main(int argc, char* argv[]){
     //auto data = mltk::datasets::make_blobs(30, 5, 2).dataset;
-    mltk::Data<double> data("../datasets/wdbc.data");
+    mltk::Data<double> data("../datasets/bupa.data");
     mltk::Timer timer;
 
     mltk::visualize::Visualization<double> vis(data);
-//    auto labels = data.getFeature(data.dim()-1);
-//    data.removeFeatures({int(data.dim())});
-//    data.setType("Regression");
-//    for(int i = 0; i < data.size(); i++){
-//        data.updatePointValue(i, labels[i]);
-//    }
     mltk::ensemble::KNNEnsembleOptm<double> knn_ensem(data, 3);
     std::cout << "Dataset name: " << data.name() << std::endl;
     std::cout << "size: " << data.size() << std::endl;

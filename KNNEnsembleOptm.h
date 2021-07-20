@@ -171,22 +171,8 @@ public:
 
             for (int j = 0; j < test.size(); j++) {
                 Yj(j) = class_maper[test(j).Y()];
-//                Yj(j) = test(j).Y();
             }
             Y = arma::join_cols(Y, Yj);
-//            auto make_predictions = [&train, &test](LearnerPointer<T> learner, size_t learner_pos,
-//                                                    std::map<int, int> class_maper){
-//                arma::colvec preds(test.size(), arma::fill::zeros);
-//
-//                learner->setSamples(train);
-//                learner->train();
-//
-//                for(int i = 0; i < test.size(); i++){
-//                    preds(i) = class_maper[learner->evaluate(test(i))];
-//                    //preds(i) = learner->evaluate(test(i));
-//                }
-//                return std::make_pair(learner_pos, preds);
-//            };
 #ifdef THREADS_ENABLED
             std::map<int, int> mapper = this->class_maper;
             std::transform(std::execution::par, this->m_learners.begin(), this->m_learners.end(), results.begin(),
@@ -198,7 +184,6 @@ public:
 
                 for(int i = 0; i < test.size(); i++){
                     preds(i) = mapper.at(learner->evaluate(test(i)));
-                    //preds(i) = learner->evaluate(test(i));
                 }
                 return std::make_pair(0, preds);
             });
@@ -222,18 +207,9 @@ public:
             });
 #endif
 
-//            for (size_t j = 0; j < n_learners; j++) {
-//#ifdef THREADS_ENABLED
-//                    results[j] = std::async(std::launch::async, make_predictions, this->m_learners[j], j, class_maper);
-//#else
-//                    results[j] = make_predictions(this->m_learners[j], j, class_maper);
-//#endif
-//            }
-
             matrix Y_learners = matrix(n_learners, kfold_splits[i].test.size());
             for (size_t col = 0; col < results.size(); col++) {
 #ifdef THREADS_ENABLED
-                //auto result = res.get();
                 Yhatj.col(col) = results[col].second;
 #else
                 Yhatj.col(col) = results[col].second;
@@ -241,14 +217,11 @@ public:
             }
             Yhat = arma::join_cols(Yhat, Yhatj);
         }
-       // Yhat.print();
         if(this->verbose) std::cout << "\nOptimizing weights\n" << std::endl;
         w = findWeights(Yhat, Y,n_learners, this->verbose);
         std::cout << "Accuracies: " << accs << std::endl;
         this->weights.resize(n_learners);
         this->weights = arma::conv_to<std::vector<double>>::from(w);
-        //std::cout << this->weights << std::endl;
-        //this->weights = (1.0-this->weights);
         std::cout << "Weights: " <<  this->weights << std::endl;
         std::cout << std::endl;
 
@@ -269,13 +242,12 @@ public:
                 return (a == pred);
             }) - _classes.begin();
             // count prediction as a vote
-            votes[pred_pos] += std::abs(this->weights[i]*class_maper[pred]);
-            sum += this->weights[i]*class_maper[pred];
+            votes[pred_pos] += std::abs(this->weights[i]*accs[i]*class_maper[pred]);
+            sum += this->weights[i]*accs[i]*class_maper[pred];
         }
-        //std::cout << votes << std::endl;
         size_t max_votes = std::max_element(votes.X().begin(), votes.X().end()) - votes.X().begin();
         return _classes[max_votes];
-        return (sum < 0)?-1:1;
+        //return (sum < 0)?-1:1;
         //return sum;
     }
 }
