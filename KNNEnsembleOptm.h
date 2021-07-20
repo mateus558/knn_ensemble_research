@@ -26,6 +26,12 @@ private:
     size_t folds{10};
     std::map<int, int> class_maper;
     mltk::Point<double> weights, accs;
+public:
+    const Point<double> &getWeights() const;
+
+    const Point<double> &getAccs() const;
+
+private:
 
     static std::string vectorToAlglib(const arma::rowvec& vec);
     static std::string matrixToAlglib(const matrix& mat);
@@ -33,17 +39,10 @@ private:
 
 public:
     KNNEnsembleOptm() = default;
-    KNNEnsembleOptm(Data<T> &data, size_t k, size_t folds=10, size_t seed=42): folds(folds) {
+    KNNEnsembleOptm(const Data<T> &data, size_t k, size_t folds=10, size_t seed=42, int verbose = 0): folds(folds) {
         this->samples = mltk::make_data<T>(data);
         this->seed = seed;
         this->m_learners.resize(7);
-//        this->m_learners[0] = std::make_shared<regressor::KNNRegressor<T, metrics::dist::Euclidean<T>>>(k);
-//        this->m_learners[1] = std::make_shared<regressor::KNNRegressor<T, metrics::dist::Lorentzian<T>>>(k);
-//        this->m_learners[2] = std::make_shared<regressor::KNNRegressor<T, metrics::dist::Cosine<T>>>(k);
-//        this->m_learners[3] = std::make_shared<regressor::KNNRegressor<T, metrics::dist::Bhattacharyya<T>>>(k);
-//        this->m_learners[4] = std::make_shared<regressor::KNNRegressor<T, metrics::dist::Pearson<T>>>(k);
-//        this->m_learners[5] = std::make_shared<regressor::KNNRegressor<T, metrics::dist::KullbackLeibler<T>>>(k);
-//        this->m_learners[6] = std::make_shared<regressor::KNNRegressor<T, metrics::dist::Hassanat<T>>>(k);
         this->m_learners[0] = std::make_shared<classifier::KNNClassifier<T, metrics::dist::Euclidean<T>>>(k);
         this->m_learners[1] = std::make_shared<classifier::KNNClassifier<T, metrics::dist::Lorentzian<T>>>(k);
         this->m_learners[2] = std::make_shared<classifier::KNNClassifier<T, metrics::dist::Cosine<T>>>(k);
@@ -118,7 +117,7 @@ public:
         alglib::minqpoptimize(state);
         alglib::minqpresults(state, w, rep);
         arma::rowvec W = arma::rowvec(w.getcontent(), n_learners);
-        if(verbose) {
+        if(verbose > 1) {
             std::cout << "Yhat: " << Yhat.n_rows << "x" << Yhat.n_cols << std::endl;
             std::cout << "Y: " << Y.n_rows << "x" << Y.n_cols << std::endl;
             std::cout << "A: " << A.n_rows << "x" << A.n_cols << std::endl;
@@ -136,7 +135,6 @@ public:
         auto kfold_splits = mltk::validation::kfoldsplit(*this->samples, folds, false, this->seed);
 #ifdef THREADS_ENABLED
         std::vector<std::pair<size_t, arma::colvec>> results(n_learners);
-        //std::vector<std::future<std::pair<size_t, arma::colvec>>> results(n_learners);
 #else
         std::vector<std::pair<size_t, arma::colvec>> results(n_learners);
 #endif
@@ -167,7 +165,7 @@ public:
             arma::colvec Yj = arma::colvec(test.size());
             matrix Yhatj = matrix(test.size(), n_learners);
 
-            if(this->verbose) std::cout << "Fold " << i+1 << std::endl;
+            if(this->verbose > 1) std::cout << "Fold " << i+1 << std::endl;
 
             for (int j = 0; j < test.size(); j++) {
                 Yj(j) = class_maper[test(j).Y()];
@@ -217,14 +215,16 @@ public:
             }
             Yhat = arma::join_cols(Yhat, Yhatj);
         }
-        if(this->verbose) std::cout << "\nOptimizing weights\n" << std::endl;
+        if(this->verbose > 1) std::cout << "\nOptimizing weights\n" << std::endl;
         w = findWeights(Yhat, Y,n_learners, this->verbose);
-        std::cout << "Accuracies: " << accs << std::endl;
+
         this->weights.resize(n_learners);
         this->weights = arma::conv_to<std::vector<double>>::from(w);
-        std::cout << "Weights: " <<  this->weights << std::endl;
-        std::cout << std::endl;
-
+        if(this->verbose > 1) {
+            std::cout << "Accuracies: " << accs << std::endl;
+            std::cout << "Weights: " << this->weights << std::endl;
+            std::cout << std::endl;
+        }
         return true;
     }
 
@@ -249,6 +249,16 @@ public:
         return _classes[max_votes];
         //return (sum < 0)?-1:1;
         //return sum;
+    }
+
+    template<typename T>
+    const Point<double> &KNNEnsembleOptm<T>::getWeights() const {
+        return weights;
+    }
+
+    template<typename T>
+    const Point<double> &KNNEnsembleOptm<T>::getAccs() const {
+        return accs;
     }
 }
 
