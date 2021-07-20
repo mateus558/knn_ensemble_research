@@ -37,10 +37,11 @@ void head(const mltk::Data<>& data, int n){
 
 template <typename Callable>
 void run(const std::vector<std::string>& datasets, bool *at_end, Callable experiment){
-    int i = 0;
+    int i = -1;
     std::vector<std::future<void> > futures(datasets.size());
     std::transform(datasets.begin(), datasets.end(), futures.begin(), [&](const std::string& path){
-        return std::async(std::launch::async, experiment, path, at_end[i], i++);
+        i++;
+        return std::async(std::launch::async, experiment, path, at_end[i], i);
     });
 }
 

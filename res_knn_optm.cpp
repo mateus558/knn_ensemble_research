@@ -11,6 +11,9 @@
 #include "utils.h"
 
 auto experiment = [](const std::string& dataset, bool at_end, int id){
+    mutex.lock();
+    std::cout << dataset << " " << at_end << std::endl;
+    mutex.unlock();
     auto data = load_dataset(dataset, "../datasets/", at_end);
     std::vector<std::pair<mltk::Data<double>, size_t>> ks;
     std::vector<std::future<void>> futures(3);
@@ -34,7 +37,7 @@ auto experiment = [](const std::string& dataset, bool at_end, int id){
             std::cout << "accuracy: " << report.accuracy << std::endl;
             std::cout << "ensemble accuracies: " << knn_ensemb.getAccs() << std::endl;
             std::cout << "ensemble weights: " << knn_ensemb.getWeights() << std::endl;
-            std::cout << "\nvalidation exec. time: " << timer.elapsed()/100 << " s" <<  std::endl;
+            std::cout << "\nvalidation exec. time: " << timer.elapsed()*0.001 << " s" <<  std::endl;
             std::cout << "------------------------------------------------------\n";
             mutex.unlock();
         };
@@ -44,8 +47,9 @@ auto experiment = [](const std::string& dataset, bool at_end, int id){
 
 int main(int argc, char* argv[]){
     std::vector<std::string> datasets = {"pima.data", "sonar.data", "bupa.data", "wdbc.data", "ionosphere.data",
-                                         "biodegradetion.csv", "vehicle.csv", "ThoraricSurgery.arff"};
-    bool at_end[] = {false,false,false,false,false,false,false,true, true,false};
+                                         "biodegradetion.csv", "ThoraricSurgery.arff", "seismic-bumps.arff",
+                                         "vehicle.csv"};
+    bool at_end[] = {false, false, false, false, false, false, true, true, false};
     mltk::Timer timer;
 
     run(datasets, at_end, experiment);
