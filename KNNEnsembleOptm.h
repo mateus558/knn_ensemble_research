@@ -23,23 +23,30 @@ private:
     using matrix = arma::mat;
     using vec = arma::colvec;
 
+    bool mult_accs{false};
+    double mse{0.0};
+public:
+    double getMse() const;
+
+private:
     size_t folds{10};
     std::map<int, int> class_maper;
     mltk::Point<double> weights, accs;
 public:
-    const Point<double> &getWeights() const;
+    [[nodiscard]] const Point<double> &getWeights() const;
 
-    const Point<double> &getAccs() const;
+    [[nodiscard]] const Point<double> &getAccs() const;
 
 private:
 
-    static std::string vectorToAlglib(const arma::rowvec& vec);
-    static std::string matrixToAlglib(const matrix& mat);
-    static arma::rowvec findWeights(const matrix& Yhatj, const matrix& Y, const size_t n_learners, int verbose);
+    std::string vectorToAlglib(const arma::rowvec& vec);
+    std::string matrixToAlglib(const matrix& mat);
+    arma::rowvec findWeights(const matrix& Yhatj, const matrix& Y, size_t n_learners, int verbose);
 
 public:
     KNNEnsembleOptm() = default;
-    KNNEnsembleOptm(const Data<T> &data, size_t k, size_t folds=10, size_t seed=42, int verbose = 0): folds(folds) {
+    KNNEnsembleOptm(const Data<T> &data, size_t k, bool mult_accs = false, size_t folds=10, size_t seed=42, int verbose = 0):
+    folds(folds), mult_accs(mult_accs) {
         this->samples = mltk::make_data<T>(data);
         this->seed = seed;
         this->m_learners.resize(7);
@@ -126,6 +133,7 @@ public:
             std::cout << "Termination type: " << rep.terminationtype << std::endl;
             ((Y - Yhat * W.t()).t() * (Y - Yhat * W.t())).print("MSE: ");
         }
+        mse = as_scalar((Y - Yhat * W.t()).t() * (Y - Yhat * W.t()));
         return W;
     }
 
@@ -152,12 +160,11 @@ public:
                 class_maper[classes[i]] = classes[i];
             }
         }
-
         accs.resize(n_learners);
-        for(size_t j = 0; j < n_learners; j++){
+        for (size_t j = 0; j < n_learners; j++) {
             auto classifier = dynamic_cast<classifier::Classifier<T> *>(this->m_learners[j].get());
             auto report = validation::kkfold(*this->samples, *classifier, 10, 10, this->seed, 0);
-            accs[j] = report.accuracy/100.0;
+            accs[j] = report.accuracy / 100.0;
         }
         for(size_t i = 0; i < kfold_splits.size(); i++) {
             auto train = kfold_splits[i].train;
@@ -242,8 +249,13 @@ public:
                 return (a == pred);
             }) - _classes.begin();
             // count prediction as a vote
-            votes[pred_pos] += std::abs(this->weights[i]*accs[i]*class_maper[pred]);
-            sum += this->weights[i]*accs[i]*class_maper[pred];
+            if(mult_accs) {
+                votes[pred_pos] += std::abs(this->weights[i] * accs[i] * class_maper[pred]);
+                sum += this->weights[i] * accs[i] * class_maper[pred];
+            }else {
+                votes[pred_pos] += std::abs(this->weights[i] * class_maper[pred]);
+                sum += this->weights[i] * class_maper[pred];
+            }
         }
         size_t max_votes = std::max_element(votes.X().begin(), votes.X().end()) - votes.X().begin();
         return _classes[max_votes];
@@ -259,6 +271,11 @@ public:
     template<typename T>
     const Point<double> &KNNEnsembleOptm<T>::getAccs() const {
         return accs;
+    }
+
+    template<typename T>
+    double KNNEnsembleOptm<T>::getMse() const {
+        return mse;
     }
 }
 
