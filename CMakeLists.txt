@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.19)
+cmake_minimum_required(VERSION 3.18)
 project(knn_research)
 
 option(ENABLE_THREADS "Enable multithreaded algorithms" OFF)
@@ -19,16 +19,17 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(ufjfmltk)
 
-add_subdirectory(alglib)
+add_subdirectory(alglib-3.17.0)
 add_subdirectory(armadillo-10.6.1)
 
 set(CMAKE_CXX_STANDARD 17)
 
 add_executable(knn_res_est_acc_wpdsm res_knn_est_acc_WPDSM.cpp)
-add_executable(knn_optm res_knn_optm.cpp utils.h)
+add_executable(knn_optm res_knn_optm.cpp utils.h utils.cpp)
 add_executable(knn_res_est_acc_hv res_knn_est_acc_HV.cpp)
 add_executable(linalg_test linalg_test.cpp)
 add_executable(threads threads.cpp)
+add_executable(start_point_test res_knn_x0.cpp utils.cpp)
 
 find_package( Threads )
 
@@ -36,9 +37,12 @@ target_link_libraries(knn_res_est_acc_wpdsm ufjfmltk -ltbb ${CMAKE_THREAD_LIBS_I
 target_link_libraries(knn_res_est_acc_hv ufjfmltk ${CMAKE_THREAD_LIBS_INIT})
 target_link_libraries(threads -ltbb ${CMAKE_THREAD_LIBS_INIT})
 
+
 if(ENABLE_THREADS)
     target_link_libraries(knn_optm -std=c++17 ufjfmltk armadillo alglib -fopenmp ${CMAKE_THREAD_LIBS_INIT})
+    target_link_libraries(start_point_test ufjfmltk alglib armadillo ${CMAKE_THREAD_LIBS_INIT})
 else(ENABLE_THREADS)
     target_link_libraries(knn_optm ufjfmltk armadillo alglib)
+    target_link_libraries(start_point_test ufjfmltk alglib armadillo)
 endif(ENABLE_THREADS)
 target_link_libraries(linalg_test alglib ufjfmltk)
