@@ -5,22 +5,20 @@
 #ifndef UFJF_MLTK_KNNENSEMBLEW_HPP
 #define UFJF_MLTK_KNNENSEMBLEW_HPP
 
-#include "Classifier.hpp"
-#include "Ensemble.hpp"
-#include "KNNClassifier.hpp"
-#include "Validation.hpp"
+#include <ufjfmltk/ufjfmltk.hpp>
+
 
 namespace mltk {
     namespace ensemble {
         template<typename T>
-        class kNNEnsembleBaggingW: public Ensemble<T>, public classifier::Classifier<T> {
+        class kNNEnsembleW: public Ensemble<T>, public classifier::Classifier<T> {
         private:
             size_t k;
             std::string voting_type = "soft";
             mltk::Point<double> weights;
         public:
-            kNNEnsembleBaggingW() = default;
-            kNNEnsembleBaggingW(Data<T> &samples, size_t _k): k(_k) {
+            kNNEnsembleW() = default;
+            kNNEnsembleW(Data<T> &samples, size_t _k): k(_k) {
                 this->samples = make_data<T>(samples);
                 this->m_learners.resize(7);
                 this->m_learners[0] = std::make_shared<classifier::KNNClassifier<T, metrics::dist::Euclidean<T>>>(k);
@@ -69,6 +67,8 @@ namespace mltk {
                 this->weights.X().resize(weights.size());
                 this->weights = weights;
             }
+
+            mltk::Point<double> getWeights(){ return this->weights; }
 
             double evaluate(const Point<T> &p, bool raw_value = false) override {
                 auto _classes = this->samples->classes();

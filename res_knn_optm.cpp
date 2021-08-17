@@ -10,8 +10,24 @@
 #include "KNNEnsembleOptm.h"
 #include "utils.h"
 
+std::ofstream output;
+std::ofstream output_csv;
+
+void prepare_out_files(){
+    output.open("../results/execution/output_qpoptm_only_one_opt.txt");
+    output_csv.open("../results/execution/results_qpoptm_only_one_opt.csv");
+
+    if(!output.is_open() || !output_csv.is_open()){
+        std::cerr << "The output file could not be open." << std::endl;
+        exit(1);
+    }
+
+    output_csv << "sep=;" << std::endl;
+    output_csv << "Dataset;k;accuracy;weights;time" << std::endl;
+}
+
 int main(int argc, char* argv[]){
-    auto experiment = [&](const std::string& dataset, bool at_end, int id){
+    auto experiment = [](const std::string& dataset, bool at_end, int id){
         mutex.lock();
         std::cout << dataset << " " << at_end << std::endl;
         mutex.unlock();
@@ -41,6 +57,17 @@ int main(int argc, char* argv[]){
                 std::cout << "MSE: " << knn_ensemb.getMse() << std::endl;
                 std::cout << "\nvalidation exec. time: " << timer.elapsed()*0.001 << " s" <<  std::endl;
                 std::cout << "------------------------------------------------------\n";
+                output << "\n------------------------------------------------------\n";
+                output << data_pair.first.name() << " report\n" << std::endl;
+                output << "k value: " << data_pair.second << std::endl;
+                output << "accuracy: " << report.accuracy << std::endl;
+                output << "ensemble accuracies: " << knn_ensemb.getAccs() << std::endl;
+                output << "ensemble weights: " << knn_ensemb.getWeights() << std::endl;
+                output << "MSE: " << knn_ensemb.getMse() << std::endl;
+                output << "\nvalidation exec. time: " << timer.elapsed()*0.001 << " s" <<  std::endl;
+                output << "------------------------------------------------------\n";
+                output_csv <<  data_pair.first.name() << ";" << data_pair.second << ";" << report.accuracy <<
+                ";" << knn_ensemb.getWeights() << std::endl;
                 mutex.unlock();
             };
             return std::async(std::launch::async, run_valid, data_pair);
@@ -48,14 +75,19 @@ int main(int argc, char* argv[]){
     };
 
     std::vector<std::string> datasets = {"pima.data", "sonar.data", "bupa.data", "wdbc.data", "ionosphere.data",
-                                     "biodegradetion.csv", "ThoraricSurgery.arff", "seismic-bumps.arff",
+                                     "biodegradation.csv", "ThoraricSurgery.arff", "seismic-bumps.arff",
                                      "vehicle.csv"};
     bool at_end[] = {false, false, false, false, false, false, true, true, false};
     mltk::Timer timer;
 
+    prepare_out_files();
+
+    timer.reset();
     run(datasets, at_end, experiment);
 
     std::cout << timer.elapsed()*0.001 << " s to compute." << std::endl;
+    output.close();
+    output_csv.close();
     std::cin.get();
     return EXIT_SUCCESS;
 }

@@ -23,8 +23,8 @@ private:
     using matrix = arma::mat;
     using vec = arma::colvec;
 
-    bool mult_accs{false};
     mltk::Point<double> start_point;
+    bool has_startpoint{false}, mult_accs{false};
     double mse{0.0};
 
 private:
@@ -125,7 +125,6 @@ public:
             alglib::real_1d_array bndl = vectorToAlglib(lower_bound).c_str();
             alglib::real_1d_array bndu = vectorToAlglib(upper_bound).c_str();
             // set initial solution
-            alglib::real_1d_array x0 = pointToAlglib(start_point).c_str();
             alglib::real_1d_array w;
             alglib::minqpstate state;
             alglib::minqpreport rep;
@@ -133,7 +132,10 @@ public:
             alglib::minqpcreate(n_learners, state);
             alglib::minqpsetquadraticterm(state, A_);
             alglib::minqpsetlinearterm(state, b_);
-            alglib::minqpsetstartingpoint(state, x0);
+            if(has_startpoint) {
+                alglib::real_1d_array x0 = pointToAlglib(start_point).c_str();
+                alglib::minqpsetstartingpoint(state, x0);
+            }
             alglib::minqpsetbc(state, bndl, bndu);
             alglib::minqpsetlc(state, C_, ct);
 
@@ -143,7 +145,7 @@ public:
             alglib::minqpoptimize(state);
             alglib::minqpresults(state, w, rep);
             arma::rowvec W = arma::rowvec(w.getcontent(), n_learners);
-            //if(verbose > 1) {
+            if(verbose > 1) {
                 std::cout << "Yhat: " << Yhat.n_rows << "x" << Yhat.n_cols << std::endl;
                 std::cout << "Y: " << Y.n_rows << "x" << Y.n_cols << std::endl;
                 std::cout << "A: " << A.n_rows << "x" << A.n_cols << std::endl;
@@ -151,7 +153,7 @@ public:
                 std::cout << "C: " << C.n_rows << "x" << C.n_cols << std::endl;
                 std::cout << "Termination type: " << rep.terminationtype << std::endl;
                 ((Y - Yhat * W.t()).t() * (Y - Yhat * W.t())).print("MSE: ");
-            //}
+            }
             mse = as_scalar((Y - Yhat * W.t()).t() * (Y - Yhat * W.t()));
             return W;
         }catch(alglib::ap_error e) {
@@ -162,6 +164,7 @@ public:
 
     template<typename T>
     bool KNNEnsembleOptm<T>::train() {
+        if(!this->weights.empty()) return true;
         size_t n_learners = this->m_learners.size();
         auto kfold_splits = mltk::validation::kfoldsplit(*this->samples, folds, false, this->seed);
 #ifdef THREADS_ENABLED
@@ -277,7 +280,7 @@ public:
                 sum += this->weights[i];
             }
         }
-        std::cout << votes << std::endl;
+        //std::cout << votes << std::endl;
         size_t max_votes = std::max_element(votes.X().begin(), votes.X().end()) - votes.X().begin();
         return _classes[max_votes];
         //return (sum < 0)?-1:1;
@@ -302,6 +305,7 @@ public:
     template<typename T>
     void KNNEnsembleOptm<T>::setStartingPoint(const Point<double> &starting_point) {
         this->start_point = starting_point;
+        has_startpoint = true;
     }
 }
 

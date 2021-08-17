@@ -9,8 +9,9 @@
 #include <future>
 
 extern std::mutex mutex;
+extern std::map<std::string, std::ofstream> log_files;
 
-mltk::Data<> load_dataset(const std::string& path, const std::string& prefix="", bool end = false);
+mltk::Data<> load_dataset(const std::string& path, const std::string& prefix="", bool end = false, bool print_info=true);
 
 void head(const mltk::Data<>& data, int n = 5);
 

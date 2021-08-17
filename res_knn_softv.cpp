@@ -8,6 +8,23 @@
 
 #include "kNNEnsembleW.hpp"
 #include "utils.h"
+#include <fstream>
+
+std::ofstream output;
+std::ofstream output_csv;
+
+void prepare_out_files(){
+    output.open("../results/execution/output_softv_acc.txt");
+    output_csv.open("../results/execution/results_softv_acc.csv");
+
+    if(!output.is_open() || !output_csv.is_open()){
+        std::cerr << "The output file could not be open." << std::endl;
+        exit(1);
+    }
+
+    output_csv << "sep=;" << std::endl;
+    output_csv << "Dataset;k;accuracy;weights (ind. accs);time" << std::endl;
+}
 
 int main(){
     auto experiment = [](const std::string& dataset, bool at_end, int id){
@@ -36,13 +53,22 @@ int main(){
                 std::cout << "dataset: " << data_pair.first.name() << "\n" << std::endl;
                 std::cout << "k value: " << data_pair.second << std::endl;
                 std::cout << "accuracy: " << report.accuracy << std::endl;
+                std::cout << "weights: " << knn_ensemb.getWeights() << std::endl;
                 std::cout << "\nvalidation exec. time: " << timer.elapsed()*0.001 << " s" <<  std::endl;
                 std::cout << "------------------------------------------------------\n";
+                output << "\n------------------------------------------------------\n";
+                output << "dataset: " << data_pair.first.name() << "\n" << std::endl;
+                output << "k value: " << data_pair.second << std::endl;
+                output << "accuracy: " << report.accuracy << std::endl;
+                output << "weights: " << knn_ensemb.getWeights() << std::endl;
+                output << "\nvalidation exec. time: " << timer.elapsed()*0.001 << " s" <<  std::endl;
+                output << "------------------------------------------------------\n";
+                output_csv <<  data_pair.first.name() << ";" << data_pair.second << ";" << report.accuracy <<
+                ";" << knn_ensemb.getWeights() << std::endl;
                 mutex.unlock();
             };
             return std::async(std::launch::async, run_valid, data_pair);
         });
-
     };
 
     std::vector<std::string> datasets = {"pima.data", "sonar.data", "bupa.data", "wdbc.data", "ionosphere.data",
@@ -51,8 +77,12 @@ int main(){
     bool at_end[] = {false, false, false, false, false, false, true, true, false};
     mltk::Timer timer;
 
+    prepare_out_files();
+
     run(datasets, at_end, experiment);
 
     std::cout << timer.elapsed()*0.001 << " s to compute." << std::endl;
+    output.close();
+    output_csv.close();
     std::cin.get();
 }
