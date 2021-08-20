@@ -6,6 +6,7 @@
 
 std::mutex mutex;
 std::map<std::string, std::ofstream> log_files;
+thread_pool pool(10);
 
 mltk::Data<> load_dataset(const std::string& path, const std::string& prefix, bool end, bool print_info){
     mltk::Data<> data(prefix+path, end);

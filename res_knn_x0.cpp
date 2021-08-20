@@ -3,37 +3,44 @@
 //
 
 #include <iostream>
+#include <mutex>
 #include "KNNEnsembleOptm.h"
 #include "utils.h"
+#include "thread_pool.hpp"
 
-void experiment(const std::string& dataset, bool at_end, int k, const mltk::Point<double>& x0){
+synced_stream sync_out;
+
+auto experiment = [](const std::string& dataset, bool at_end, int k, const mltk::Point<double>& x0){
     auto data = load_dataset(dataset, "../datasets/", at_end);
 
-    mltk::ensemble::KNNEnsembleOptm<double> knn_ensemb(data, k, true, 10, 42, 2);
+    mltk::ensemble::KNNEnsembleOptm<double> knn_ensemb(data, k, true, 10, 42, 0);
     mltk::Timer timer;
     knn_ensemb.setStartingPoint(x0);
     knn_ensemb.train();
-    std::cout << "ensemble accuracies: " << knn_ensemb.getAccs() << std::endl;
-    std::cout << "ensemble weights: " << knn_ensemb.getWeights() << std::endl;
-    auto report = mltk::validation::kkfold(data, knn_ensemb, 10, 10, true,
-                                           42, 2);
-    std::cout << data.name() << " report\n" << std::endl;
-    std::cout << "k value: " << k << std::endl;
-    std::cout << "accuracy: " << report.accuracy << std::endl;
-    std::cout << "ensemble accuracies: " << knn_ensemb.getAccs() << std::endl;
-    std::cout << "ensemble weights: " << knn_ensemb.getWeights() << std::endl;
-    std::cout << "MSE: " << knn_ensemb.getMse() << std::endl;
-    std::cout << "\nvalidation exec. time: " << timer.elapsed()*0.001 << " s" <<  std::endl;
-    std::cout << "------------------------------------------------------\n";
 
-}
+    auto report = mltk::validation::kkfold(data, knn_ensemb, 10, 10, true,
+                                           0, 0);
+
+    sync_out.println(data.name(), " report\n");
+    sync_out.println("k value: ", k);
+    sync_out.println("accuracy: ", report.accuracy);
+    sync_out.println("ensemble accuracies: ", knn_ensemb.getAccs());
+    sync_out.println("ensemble weights: ", knn_ensemb.getWeights());
+    sync_out.println("MSE: ", knn_ensemb.getMse());
+    sync_out.println("\nvalidation exec. time: ", timer.elapsed()*0.001, " s");
+    sync_out.println("------------------------------------------------------");
+};
 
 int main(){
-    //experiment("biodegradetion.csv", false, 3, {0,0,0,0.12,0.25,0.63});
-    experiment("bupa.data", false, 3, {0.13, 0, 0.12, 0, 0.12, 0.25, 0.38});
-    //experiment("ThoraricSurgery.arff", true, 3, {0,0,0.11,0,0,0,0.89});
-    //experiment("ionosphere.data", false, 3, {0.38, 0, 0.12, 0, 0.12, 0, 0.38});
-    //experiment("pima.data", false, 3, {0.26, 0, 0.26, 0.13, 0.13, 0, 0.26});
-
+    thread_pool pool(10);
+    std::string dataset[] = {"biodegradation.csv", "bupa.data", "ThoraricSurgery.arff", "ionosphere.data", "pima.data"};
+    bool atEnd[] = {false, false, true, false, false};
+    int k = 3;
+    std::vector<mltk::Point<double>> x0 = {{0, 0, 0, 0.24, 0, 0, 0.76}, {0.12, 0.12, 0.12, 0, 0.25, 0, 0.39},
+                                           {0,0,0,0,0,0,1}, {0, 0, 0, 0, 0.24, 0.38, 0.38},
+                                           {0.25, 0.12, 0.38, 0, 0, 0, 0.25}};
+    for(int i = 0; i < 5; i++){
+        pool.push_task(experiment, dataset[i], atEnd[i], k, x0[i]);
+    }
     std::cin.get();
 }

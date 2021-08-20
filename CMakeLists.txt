@@ -34,6 +34,7 @@ add_executable(threads threads.cpp)
 add_executable(start_point_test res_knn_x0.cpp utils.cpp)
 add_executable(knn_wss res_knn_wss.cpp utils.cpp)
 add_executable(knn_ind res_knn_ind_acc.cpp utils.cpp)
+add_executable(knn_optm_dsm res_knn_optm_dsm.cpp utils.cpp)
 
 
 find_package( Threads )
@@ -44,8 +45,9 @@ target_link_libraries(threads -pthread ${CMAKE_THREAD_LIBS_INIT})
 target_link_libraries(knn_hv -pthread ufjfmltk)
 target_link_libraries(knn_soft -pthread ufjfmltk)
 target_link_libraries(knn_wss ufjfmltk -pthread ${CMAKE_THREAD_LIBS_INIT})
-target_link_libraries(knn_optm ufjfmltk armadillo alglib -pthread ${CMAKE_THREAD_LIBS_INIT})
 target_link_libraries(knn_ind ufjfmltk -pthread ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(knn_optm ufjfmltk armadillo alglib -pthread ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(knn_optm_dsm ufjfmltk armadillo alglib -pthread ${CMAKE_THREAD_LIBS_INIT})
 
 
 if(ENABLE_THREADS)

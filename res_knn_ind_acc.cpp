@@ -5,9 +5,6 @@
 #include "thread_pool.hpp"
 #include "utils.h"
 
-
-
-
 int main(){
     std::vector<std::string> datasets = {"pima.data", "sonar.data", "bupa.data", "wdbc.data", "ionosphere.data",
                                          "biodegradation.csv", "ThoraricSurgery.arff", "seismic-bumps.arff",
