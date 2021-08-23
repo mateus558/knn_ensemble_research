@@ -10,6 +10,10 @@
 std::ofstream output;
 std::ofstream output_csv;
 
+synced_stream sync_out;
+synced_stream sync_log(output);
+synced_stream sync_csv(output_csv);
+
 void prepare_out_files(){
     output.open("../results/execution/output_qpoptm_only_one_opt_dsm.txt");
     output_csv.open("../results/execution/results_qpoptm_only_one_opt_dsm.csv");
@@ -20,24 +24,25 @@ void prepare_out_files(){
     }
 
     output_csv << "sep=;" << std::endl;
-    output_csv << "Dataset;k;accuracy;weights;time" << std::endl;
+    //output_csv << "Dataset;k;alpha;accuracy;weights;accuracies;time" << std::endl;
+    std::cout << "sep=;\nDataset;k;alpha;accuracy;weights;time" << std::endl;
 }
 
 int main(int argc, char* argv[]){
-    auto experiment = [](const std::string& dataset, bool at_end, int id){
-        mutex.lock();
-        std::cout << dataset << " " << at_end << std::endl;
-        mutex.unlock();
-        auto data = load_dataset(dataset, "../datasets/", at_end);
+    auto experiment = [&](const std::string& dataset, bool at_end, int id){
+        auto data = load_dataset(dataset, "../datasets/", at_end, false);
         std::vector<std::pair<mltk::Data<double>, size_t>> ks;
 
         ks.emplace_back(data.copy(), 3);
         ks.emplace_back(data.copy(), 5);
         ks.emplace_back(data.copy(), 7);
 
-        std::for_each(ks.begin(), ks.end(), [](std::pair<mltk::Data<double>, size_t>& data_pair){
-            auto run_valid = [](std::pair<mltk::Data<double>, size_t> data_pair){
+        std::for_each(ks.begin(), ks.end(), [&](std::pair<mltk::Data<double>, size_t>& data_pair){
+            auto run_valid = [&](const std::pair<mltk::Data<double>, size_t>& data_pair){
                 auto alphas = mltk::linspace(0, 1, 11);
+                alphas.resize(alphas.size()+1);
+                alphas[alphas.size()-1] = 1;
+
                 auto alpha_run = [](double alpha, std::pair<mltk::Data<double>, size_t> data_pair){
                     mltk::ensemble::KNNEnsembleOptm<double> knn_ensemb(data_pair.first, data_pair.second, alpha,
                                                                        false, 10, 0, 0);
@@ -46,30 +51,28 @@ int main(int argc, char* argv[]){
                     auto report = mltk::validation::kkfold(data_pair.first, knn_ensemb, 10, 10, true,
                                                            0, 0);
 
-                    mutex.lock();
-                    std::cout << "\n------------------------------------------------------\n";
-                    std::cout << data_pair.first.name() << " report\n" << std::endl;
-                    std::cout << "k value: " << data_pair.second << std::endl;
-                    std::cout << "alpha: " << alpha << std::endl;
-                    std::cout << "accuracy: " << report.accuracy << std::endl;
-                    std::cout << "ensemble accuracies: " << knn_ensemb.getAccs() << std::endl;
-                    std::cout << "ensemble weights: " << knn_ensemb.getWeights() << std::endl;
-                    std::cout << "MSE: " << knn_ensemb.getMse() << std::endl;
-                    std::cout << "\nvalidation exec. time: " << timer.elapsed() * 0.001 << " s" << std::endl;
-                    std::cout << "------------------------------------------------------\n";
-                    output << "\n------------------------------------------------------\n";
-                    output << data_pair.first.name() << " report\n" << std::endl;
-                    output << "k value: " << data_pair.second << std::endl;
-                    output << "alpha: " << alpha << std::endl;
-                    output << "accuracy: " << report.accuracy << std::endl;
-                    output << "ensemble accuracies: " << knn_ensemb.getAccs() << std::endl;
-                    output << "ensemble weights: " << knn_ensemb.getWeights() << std::endl;
-                    output << "MSE: " << knn_ensemb.getMse() << std::endl;
-                    output << "\nvalidation exec. time: " << timer.elapsed() * 0.001 << " s" << std::endl;
-                    output << "------------------------------------------------------\n";
-                    output_csv << data_pair.first.name() << ";" << data_pair.second << ";" << report.accuracy <<
-                    ";" << knn_ensemb.getWeights() << std::endl;
-                    mutex.unlock();
+//                    sync_out.println("\n------------------------------------------------------");
+//                    sync_out.println(data_pair.first.name(), " report\n");
+//                    sync_out.println("k value: ", data_pair.second);
+//                    sync_out.println("alpha: ", alpha);
+//                    sync_out.println("accuracy: ", report.accuracy);
+//                    sync_out.println("ensemble accuracies: ", knn_ensemb.getAccs());
+//                    sync_out.println("ensemble weights: ", knn_ensemb.getWeights());
+//                    sync_out.println("MSE: ", knn_ensemb.getMse());
+//                    sync_out.println("\nvalidation exec. time: ", timer.elapsed() * 0.001, " s");
+//                    sync_out.println("------------------------------------------------------");
+//                    sync_log.println("\n------------------------------------------------------");
+//                    sync_log.println(data_pair.first.name(), " report\n");
+//                    sync_log.println("k value: ", data_pair.second);
+//                    sync_log.println("alpha: ", alpha);
+//                    sync_log.println("accuracy: ", report.accuracy);
+//                    sync_log.println("ensemble accuracies: ", knn_ensemb.getAccs());
+//                    sync_log.println("ensemble weights: ", knn_ensemb.getWeights());
+//                    sync_log.println("MSE: ", knn_ensemb.getMse());
+//                    sync_log.println("\nvalidation exec. time: ", timer.elapsed() * 0.001, " s");
+//                    sync_log.println("------------------------------------------------------");
+                    sync_out.println(data_pair.first.name(), ";", data_pair.second, ";", alpha, ";", report.accuracy,
+                                     ";", knn_ensemb.getWeights(),";",timer.elapsed() * 0.001);
                 };
                 for(auto alpha: alphas) {
                     pool.push_task(alpha_run, alpha, data_pair);
@@ -90,7 +93,7 @@ int main(int argc, char* argv[]){
     timer.reset();
     run(datasets, at_end, experiment);
 
-    std::cout << timer.elapsed()*0.001 << " s to compute." << std::endl;
+    //std::cout << timer.elapsed()*0.001 << " s to compute." << std::endl;
     output.close();
     output_csv.close();
     std::cin.get();

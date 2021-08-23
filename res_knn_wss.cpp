@@ -11,8 +11,8 @@ std::ofstream output;
 std::ofstream output_csv;
 
 void prepare_out_files(){
-    output.open("../results/execution/output_wss.txt");
-    output_csv.open("../results/execution/results_wss.csv");
+    output.open("./output_wss.txt");
+    output_csv.open("./results_wss.csv");
 
     if(!output.is_open() || !output_csv.is_open()){
         std::cerr << "The output file could not be open." << std::endl;
