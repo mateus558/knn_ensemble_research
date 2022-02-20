@@ -1,7 +1,7 @@
 //
 // Created by mateus on 11/05/2021.
 //
-
+#pragma once
 #ifndef KNN_RESEARCH_KNNENSEMBLEOPTM_H
 #define KNN_RESEARCH_KNNENSEMBLEOPTM_H
 

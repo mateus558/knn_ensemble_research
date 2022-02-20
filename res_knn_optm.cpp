@@ -14,8 +14,8 @@ std::ofstream output;
 std::ofstream output_csv;
 
 void prepare_out_files(){
-    output.open("../results/execution/output_qpoptm_only_one_opt_multacc.txt");
-    output_csv.open("../results/execution/results_qpoptm_only_one_opt_multacc.csv");
+    output.open("../results/execution/output_qpoptm_only_one_opt1.txt");
+    output_csv.open("../results/execution/results_qpoptm_only_one_opt1.csv");
 
     if(!output.is_open() || !output_csv.is_open()){
         std::cerr << "The output file could not be open." << std::endl;
@@ -41,9 +41,13 @@ int main(int argc, char* argv[]){
         std::vector<std::future<void>> futures(ks.size());
         std::transform(ks.begin(), ks.end(), futures.begin(), [](std::pair<mltk::Data<double>, size_t>& data_pair){
             auto run_valid = [](std::pair<mltk::Data<double>, size_t> data_pair){
-                mltk::ensemble::KNNEnsembleOptm<double> knn_ensemb(data_pair.first, data_pair.second, true, 10, 0, 0);
+                mltk::ensemble::KNNEnsembleOptm<double> knn_ensemb(data_pair.first, data_pair.second, false, 10, 0, 0);
                 mltk::Timer timer;
+                knn_ensemb.train();
 
+                auto weights = knn_ensemb.getWeights();
+                auto ind_accs = knn_ensemb.getAccs();
+                auto mse = knn_ensemb.getMse();
                 auto report = mltk::validation::kkfold(data_pair.first, knn_ensemb, 10, 10, true,
                                                        0, 0);
 
@@ -52,22 +56,22 @@ int main(int argc, char* argv[]){
                 std::cout << data_pair.first.name() << " report\n" << std::endl;
                 std::cout << "k value: " << data_pair.second << std::endl;
                 std::cout << "accuracy: " << report.accuracy << std::endl;
-                std::cout << "ensemble accuracies: " << knn_ensemb.getAccs() << std::endl;
-                std::cout << "ensemble weights: " << knn_ensemb.getWeights() << std::endl;
-                std::cout << "MSE: " << knn_ensemb.getMse() << std::endl;
+                std::cout << "ensemble accuracies: " << ind_accs << std::endl;
+                std::cout << "ensemble weights: " << weights << std::endl;
+                std::cout << "MSE: " << mse << std::endl;
                 std::cout << "\nvalidation exec. time: " << timer.elapsed()*0.001 << " s" <<  std::endl;
                 std::cout << "------------------------------------------------------\n";
                 output << "\n------------------------------------------------------\n";
                 output << data_pair.first.name() << " report\n" << std::endl;
                 output << "k value: " << data_pair.second << std::endl;
                 output << "accuracy: " << report.accuracy << std::endl;
-                output << "ensemble accuracies: " << knn_ensemb.getAccs() << std::endl;
-                output << "ensemble weights: " << knn_ensemb.getWeights() << std::endl;
+                output << "ensemble accuracies: " << ind_accs << std::endl;
+                output << "ensemble weights: " << weights << std::endl;
                 output << "MSE: " << knn_ensemb.getMse() << std::endl;
                 output << "\nvalidation exec. time: " << timer.elapsed()*0.001 << " s" <<  std::endl;
                 output << "------------------------------------------------------\n";
                 output_csv <<  data_pair.first.name() << ";" << data_pair.second << ";" << report.accuracy <<
-                ";" << knn_ensemb.getWeights() << std::endl;
+                ";" << weights << std::endl;
                 mutex.unlock();
             };
             return std::async(std::launch::async, run_valid, data_pair);

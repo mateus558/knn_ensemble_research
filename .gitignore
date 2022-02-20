@@ -1,7 +1,4 @@
 # Project exclude paths
-/cmake-build-debug/CMakeFiles/
-/cmake-build-release/CMakeFiles/
-/cmake-build-release-multithreaded/CMakeFiles/
 /cmake-*
 .gradle
 .idea

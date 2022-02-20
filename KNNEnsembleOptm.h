@@ -24,7 +24,7 @@ private:
     using vec = arma::colvec;
 
     mltk::Point<double> start_point;
-    bool has_startpoint{false}, mult_accs{false};
+    bool has_startpoint{false}, mult_accs{false}, pre_weights;
     double mse{0.0};
 
 private:
@@ -34,7 +34,9 @@ private:
 public:
     [[nodiscard]] const Point<double> &getWeights() const;
 
-    [[nodiscard]] const Point<double> &getAccs() const;
+    [[nodiscard]] Point<double> &getAccs();
+
+    mltk::Point<double> accs_on_learners(mltk::Data<double> &test);
 
     double getMse() const;
 
@@ -49,8 +51,8 @@ private:
 
 public:
     KNNEnsembleOptm() = default;
-    KNNEnsembleOptm(const Data<T> &data, size_t k, bool mult_accs = false, size_t folds=10, size_t seed=42, int verbose = 0):
-    folds(folds), mult_accs(mult_accs) {
+    KNNEnsembleOptm(const Data<T> &data, size_t k, bool mult_accs = false, size_t folds=10, bool pre_weights=true, size_t seed=42, int verbose = 0):
+    folds(folds), mult_accs(mult_accs), pre_weights(pre_weights) {
         this->samples = mltk::make_data<T>(data);
         this->seed = seed;
         this->m_learners.resize(7);
@@ -69,6 +71,12 @@ public:
 
     std::string getFormulationString() override{
         return "Primal";
+    }
+
+    void set_samples(mltk::Data<T>& data){
+        for(auto& learner: this->m_learners){
+            learner->setSamples(data);
+        }
     }
 };
 
@@ -164,9 +172,9 @@ public:
 
     template<typename T>
     bool KNNEnsembleOptm<T>::train() {
-        if(!this->weights.empty()) return true;
+        if(pre_weights && !this->weights.empty()) return true;
         size_t n_learners = this->m_learners.size();
-        auto kfold_splits = mltk::validation::kfoldsplit(*this->samples, folds, false, this->seed);
+        auto kfold_splits = mltk::validation::kfoldsplit(*this->samples, folds, true, this->seed);
 #ifdef THREADS_ENABLED
         std::vector<std::pair<size_t, arma::colvec>> results(n_learners);
 #else
@@ -188,11 +196,15 @@ public:
             }
         }
         accs.resize(n_learners);
+        if(mult_accs) {
 #pragma unroll
-        for (size_t j = 0; j < n_learners; j++) {
-            auto classifier = dynamic_cast<classifier::Classifier<T> *>(this->m_learners[j].get());
-            auto report = validation::kkfold(*this->samples, *classifier, 10, 10, this->seed, 0);
-            accs[j] = report.accuracy / 100.0;
+            for (size_t j = 0; j < n_learners; j++) {
+                auto classifier = dynamic_cast<classifier::Classifier<T> *>(this->m_learners[j].get());
+                auto report = validation::kkfold(*this->samples, *classifier, 10, 10, this->seed, 0);
+                accs[j] = report.accuracy / 100.0;
+            }
+        }else{
+            accs = 1;
         }
         for(size_t i = 0; i < kfold_splits.size(); i++) {
             auto train = kfold_splits[i].train;
@@ -293,7 +305,15 @@ public:
     }
 
     template<typename T>
-    const Point<double> &KNNEnsembleOptm<T>::getAccs() const {
+    Point<double> &KNNEnsembleOptm<T>::getAccs() {
+        if(!mult_accs) {
+            accs.resize(this->m_learners.size());
+            for (size_t j = 0; j < this->m_learners.size(); j++) {
+                auto classifier = dynamic_cast<classifier::Classifier<T> *>(this->m_learners[j].get());
+                auto report = validation::kkfold(*this->samples, *classifier, 10, 10, this->seed, 0);
+                accs[j] = report.accuracy / 100.0;
+            }
+        }
         return accs;
     }
 
@@ -306,6 +326,21 @@ public:
     void KNNEnsembleOptm<T>::setStartingPoint(const Point<double> &starting_point) {
         this->start_point = starting_point;
         has_startpoint = true;
+    }
+
+    template<typename T>
+    mltk::Point<double> KNNEnsembleOptm<T>::accs_on_learners(mltk::Data<double> &test) {
+        mltk::Point<double> accs(this->m_learners.size(), 0.0);
+
+        for(int i = 0; i < test.size(); i++) {
+            for(int l = 0; l < this->m_learners.size(); l++) {
+                if(this->m_learners[l]->evaluate(test(i)) == test(i).Y()) {
+                    accs[l] += 1;
+                }
+            }
+        }
+        accs /= test.size();
+        return accs;
     }
 }
 

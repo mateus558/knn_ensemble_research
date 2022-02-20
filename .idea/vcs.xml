@@ -2,5 +2,10 @@
 <project version="4">
   <component name="VcsDirectoryMappings">
     <mapping directory="$PROJECT_DIR$" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/cmake-build-debug-remote/_deps/ufjfmltk-src" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/cmake-build-debug-workstation/_deps/ufjfmltk-src" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/cmake-build-release---multithreads/_deps/ufjfmltk-src" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/cmake-build-release-workstation/_deps/ufjfmltk-src" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/cmake-build-relwithdebinfo-workstation/_deps/ufjfmltk-src" vcs="Git" />
   </component>
 </project>

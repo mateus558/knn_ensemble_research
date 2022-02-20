@@ -15,8 +15,8 @@ synced_stream sync_log(output);
 synced_stream sync_csv(output_csv);
 
 void prepare_out_files(){
-    output.open("../results/execution/output_qpoptm_only_one_opt_dsm.txt");
-    output_csv.open("../results/execution/results_qpoptm_only_one_opt_dsm.csv");
+    output.open("../results/execution/output_qpoptm_only_one_opt_dsm_train2.txt");
+    output_csv.open("../results/execution/results_qpoptm_only_one_opt_dsm_train2.csv");
 
     if(!output.is_open() || !output_csv.is_open()){
         std::cerr << "The output file could not be open." << std::endl;
@@ -25,7 +25,7 @@ void prepare_out_files(){
 
     output_csv << "sep=;" << std::endl;
     //output_csv << "Dataset;k;alpha;accuracy;weights;accuracies;time" << std::endl;
-    std::cout << "sep=;\nDataset;k;alpha;accuracy;weights;time" << std::endl;
+    std::cout << "sep=;\nDataset;k;alpha;accuracy;weights;individual_accs;time" << std::endl;
 }
 
 int main(int argc, char* argv[]){
@@ -47,7 +47,7 @@ int main(int argc, char* argv[]){
                     mltk::ensemble::KNNEnsembleOptm<double> knn_ensemb(data_pair.first, data_pair.second, alpha,
                                                                        false, 10, 0, 0);
                     mltk::Timer timer;
-
+                    knn_ensemb.train();
                     auto report = mltk::validation::kkfold(data_pair.first, knn_ensemb, 10, 10, true,
                                                            0, 0);
 
@@ -72,7 +72,7 @@ int main(int argc, char* argv[]){
 //                    sync_log.println("\nvalidation exec. time: ", timer.elapsed() * 0.001, " s");
 //                    sync_log.println("------------------------------------------------------");
                     sync_out.println(data_pair.first.name(), ";", data_pair.second, ";", alpha, ";", report.accuracy,
-                                     ";", knn_ensemb.getWeights(),";",timer.elapsed() * 0.001);
+                                     ";", knn_ensemb.getWeights(),";",knn_ensemb.getAccs(),";",timer.elapsed() * 0.001);
                 };
                 for(auto alpha: alphas) {
                     pool.push_task(alpha_run, alpha, data_pair);
