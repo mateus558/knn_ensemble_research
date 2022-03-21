@@ -1,0 +1,396 @@
+Path: ../datasets/bupa.data
+Dataset name: bupa
+size: 345
+dims: 6
+classes: [1, -1]
+classes distribution: [145, 200]
+
+
+Path: ../datasets/ThoraricSurgery.arff
+Dataset name: ThoraricSurgery
+size: 470
+dims: 16
+classes: [0, 1]
+classes distribution: [400, 70]
+
+
+Path: ../datasets/pima.data
+Dataset name: pima
+size: 768
+dims: 8
+classes: [1, -1]
+classes distribution: [268, 500]
+
+
+Path: ../datasets/vehicle.csv
+Dataset name: vehicle
+size: 846
+dims: 18
+classes: [1, 2, 3, 4]
+classes distribution: [199, 217, 218, 212]
+
+
+Path: ../datasets/sonar.data
+Dataset name: sonar
+size: 208
+dims: 60
+classes: [1, -1]
+classes distribution: [97, 111]
+
+
+Path: ../datasets/ionosphere.data
+Dataset name: ionosphere
+size: 351
+dims: 34
+classes: [1, -1]
+classes distribution: [225, 126]
+
+
+Path: ../datasets/wdbc.data
+Dataset name: wdbc
+size: 569
+dims: 30
+classes: [1, -1]
+classes distribution: [212, 357]
+
+
+Path: ../datasets/seismic-bumps.arff
+Dataset name: seismic-bumps
+size: 2584
+dims: 18
+classes: [0, 1]
+classes distribution: [2414, 170]
+
+
+Path: ../datasets/biodegradation.csv
+Dataset name: biodegradation
+size: 1055
+dims: 41
+classes: [1, -1]
+classes distribution: [356, 699]
+
+
+
+------------------------------------------------------
+bupa report
+
+k value: 3
+accuracy: 65.100
+ensemble accuracies: [0.635, 0.503, 0.643, 0.574, 0.663, 0.561, 0.656]
+ensemble weights: [0.078, 0.153, 0.083, 0.039, 0.293, 0.107, 0.246]
+MSE: 301.305
+
+validation exec. time: 495.089 s
+------------------------------------------------------
+
+------------------------------------------------------
+bupa report
+
+k value: 7
+accuracy: 68.071
+ensemble accuracies: [0.683, 0.541, 0.687, 0.582, 0.700, 0.580, 0.683]
+ensemble weights: [0.165, 0.026, 0.233, 0.000, 0.287, 0.112, 0.176]
+MSE: 278.245
+
+validation exec. time: 543.922 s
+------------------------------------------------------
+
+------------------------------------------------------
+bupa report
+
+k value: 5
+accuracy: 67.129
+ensemble accuracies: [0.661, 0.524, 0.666, 0.581, 0.674, 0.569, 0.676]
+ensemble weights: [0.120, 0.174, 0.310, 0.000, 0.145, 0.007, 0.246]
+MSE: 291.258
+
+validation exec. time: 544.843 s
+------------------------------------------------------
+
+------------------------------------------------------
+sonar report
+
+k value: 3
+accuracy: 81.349
+ensemble accuracies: [0.821, 0.433, 0.809, 0.640, 0.804, 0.675, 0.817]
+ensemble weights: [0.399, 0.000, 0.089, 0.000, 0.150, 0.189, 0.172]
+MSE: 100.012
+
+validation exec. time: 899.503 s
+------------------------------------------------------
+
+------------------------------------------------------
+sonar report
+
+k value: 7
+accuracy: 77.397
+ensemble accuracies: [0.743, 0.399, 0.762, 0.556, 0.695, 0.611, 0.788]
+ensemble weights: [0.060, 0.000, 0.259, 0.000, 0.000, 0.187, 0.495]
+MSE: 121.924
+
+validation exec. time: 911.222 s
+------------------------------------------------------
+
+------------------------------------------------------
+sonar report
+
+k value: 5
+accuracy: 81.659
+ensemble accuracies: [0.797, 0.429, 0.789, 0.591, 0.749, 0.639, 0.828]
+ensemble weights: [0.262, 0.000, 0.146, 0.023, 0.000, 0.092, 0.477]
+MSE: 105.699
+
+validation exec. time: 968.273 s
+------------------------------------------------------
+
+------------------------------------------------------
+ThoraricSurgery report
+
+k value: 7
+accuracy: 85.043
+ensemble accuracies: [0.845, 0.851, 0.842, 0.819, 0.851, 0.851, 0.848]
+ensemble weights: [0.000, 0.186, 0.000, 0.180, 0.186, 0.186, 0.263]
+MSE: 246.469
+
+validation exec. time: 1242.476 s
+------------------------------------------------------
+
+------------------------------------------------------
+ThoraricSurgery report
+
+k value: 5
+accuracy: 84.894
+ensemble accuracies: [0.835, 0.851, 0.836, 0.756, 0.851, 0.851, 0.842]
+ensemble weights: [0.000, 0.209, 0.000, 0.109, 0.209, 0.209, 0.266]
+MSE: 245.144
+
+validation exec. time: 1443.984 s
+------------------------------------------------------
+
+------------------------------------------------------
+ThoraricSurgery report
+
+k value: 3
+accuracy: 84.872
+ensemble accuracies: [0.813, 0.831, 0.822, 0.815, 0.809, 0.769, 0.834]
+ensemble weights: [0.123, 0.000, 0.000, 0.356, 0.000, 0.062, 0.458]
+MSE: 241.921
+
+validation exec. time: 1454.665 s
+------------------------------------------------------
+
+------------------------------------------------------
+ionosphere report
+
+k value: 5
+accuracy: 89.583
+ensemble accuracies: [0.843, 0.395, 0.842, 0.619, 0.517, 0.576, 0.895]
+ensemble weights: [0.000, 0.002, 0.006, 0.000, 0.042, 0.000, 0.950]
+MSE: 125.058
+
+validation exec. time: 1538.130 s
+------------------------------------------------------
+
+------------------------------------------------------
+ionosphere report
+
+k value: 7
+accuracy: 89.176
+ensemble accuracies: [0.833, 0.415, 0.835, 0.607, 0.558, 0.565, 0.891]
+ensemble weights: [0.019, 0.026, 0.000, 0.000, 0.021, 0.000, 0.934]
+MSE: 142.355
+
+validation exec. time: 1546.694 s
+------------------------------------------------------
+
+------------------------------------------------------
+ionosphere report
+
+k value: 3
+accuracy: 90.111
+ensemble accuracies: [0.847, 0.417, 0.855, 0.612, 0.497, 0.526, 0.901]
+ensemble weights: [0.000, 0.058, 0.079, 0.000, 0.000, 0.000, 0.862]
+MSE: 116.445
+
+validation exec. time: 1558.828 s
+------------------------------------------------------
+
+------------------------------------------------------
+pima report
+
+k value: 3
+accuracy: 70.525
+ensemble accuracies: [0.695, 0.555, 0.647, 0.484, 0.668, 0.472, 0.697]
+ensemble weights: [0.229, 0.144, 0.108, 0.014, 0.232, 0.000, 0.275]
+MSE: 583.225
+
+validation exec. time: 1660.844 s
+------------------------------------------------------
+
+------------------------------------------------------
+pima report
+
+k value: 7
+accuracy: 74.144
+ensemble accuracies: [0.726, 0.575, 0.702, 0.351, 0.676, 0.470, 0.737]
+ensemble weights: [0.238, 0.043, 0.205, 0.051, 0.183, 0.000, 0.281]
+MSE: 545.438
+
+validation exec. time: 3855.797 s
+------------------------------------------------------
+
+------------------------------------------------------
+pima report
+
+k value: 5
+accuracy: 72.437
+ensemble accuracies: [0.716, 0.578, 0.688, 0.375, 0.672, 0.456, 0.714]
+ensemble weights: [0.195, 0.069, 0.205, 0.032, 0.224, 0.000, 0.276]
+MSE: 563.537
+
+validation exec. time: 3855.802 s
+------------------------------------------------------
+
+------------------------------------------------------
+wdbc report
+
+k value: 7
+accuracy: 95.404
+ensemble accuracies: [0.930, 0.540, 0.924, 0.372, 0.946, 0.390, 0.956]
+ensemble weights: [0.146, 0.000, 0.163, 0.000, 0.137, 0.000, 0.554]
+MSE: 80.724
+
+validation exec. time: 3854.999 s
+------------------------------------------------------
+
+------------------------------------------------------
+wdbc report
+
+k value: 3
+accuracy: 95.070
+ensemble accuracies: [0.925, 0.497, 0.922, 0.372, 0.949, 0.391, 0.957]
+ensemble weights: [0.048, 0.000, 0.229, 0.000, 0.175, 0.000, 0.549]
+MSE: 83.851
+
+validation exec. time: 3855.213 s
+------------------------------------------------------
+
+------------------------------------------------------
+wdbc report
+
+k value: 5
+accuracy: 95.225
+ensemble accuracies: [0.930, 0.533, 0.921, 0.372, 0.949, 0.387, 0.956]
+ensemble weights: [0.216, 0.000, 0.098, 0.000, 0.130, 0.001, 0.555]
+MSE: 86.519
+
+validation exec. time: 3855.028 s
+------------------------------------------------------
+
+------------------------------------------------------
+vehicle report
+
+k value: 7
+accuracy: 68.977
+ensemble accuracies: [0.636, 0.248, 0.665, 0.258, 0.657, 0.255, 0.686]
+ensemble weights: [0.000, 0.000, 0.253, 0.000, 0.008, 0.000, 0.740]
+MSE: 1397.073
+
+validation exec. time: 3855.862 s
+------------------------------------------------------
+
+------------------------------------------------------
+vehicle report
+
+k value: 3
+accuracy: 66.752
+ensemble accuracies: [0.648, 0.246, 0.670, 0.258, 0.631, 0.255, 0.677]
+ensemble weights: [0.000, 0.000, 0.464, 0.000, 0.000, 0.000, 0.536]
+MSE: 1413.393
+
+validation exec. time: 3855.867 s
+------------------------------------------------------
+
+------------------------------------------------------
+vehicle report
+
+k value: 5
+accuracy: 67.729
+ensemble accuracies: [0.647, 0.249, 0.666, 0.258, 0.646, 0.256, 0.686]
+ensemble weights: [0.000, 0.000, 0.275, 0.000, 0.000, 0.000, 0.725]
+MSE: 1387.390
+
+validation exec. time: 3855.882 s
+------------------------------------------------------
+
+------------------------------------------------------
+biodegradation report
+
+k value: 3
+accuracy: 82.616
+ensemble accuracies: [0.742, 0.546, 0.697, 0.633, 0.565, 0.529, 0.824]
+ensemble weights: [0.180, 0.000, 0.000, 0.077, 0.076, 0.000, 0.667]
+MSE: 577.689
+
+validation exec. time: 6043.098 s
+------------------------------------------------------
+
+------------------------------------------------------
+biodegradation report
+
+k value: 5
+accuracy: 83.516
+ensemble accuracies: [0.764, 0.598, 0.717, 0.641, 0.570, 0.590, 0.839]
+ensemble weights: [0.205, 0.051, 0.000, 0.069, 0.000, 0.000, 0.676]
+MSE: 525.718
+
+validation exec. time: 6220.808 s
+------------------------------------------------------
+
+------------------------------------------------------
+biodegradation report
+
+k value: 7
+accuracy: 83.687
+ensemble accuracies: [0.758, 0.598, 0.712, 0.643, 0.570, 0.643, 0.837]
+ensemble weights: [0.186, 0.000, 0.000, 0.100, 0.000, 0.044, 0.671]
+MSE: 525.067
+
+validation exec. time: 6229.796 s
+------------------------------------------------------
+
+------------------------------------------------------
+seismic-bumps report
+
+k value: 3
+accuracy: 93.417
+ensemble accuracies: [0.918, 0.934, 0.921, 0.913, 0.934, 0.874, 0.922]
+ensemble weights: [0.086, 0.000, 0.188, 0.000, 0.000, 0.527, 0.199]
+MSE: 619.618
+
+validation exec. time: 14334.867 s
+------------------------------------------------------
+
+------------------------------------------------------
+seismic-bumps report
+
+k value: 7
+accuracy: 93.382
+ensemble accuracies: [0.930, 0.934, 0.931, 0.932, 0.934, 0.934, 0.932]
+ensemble weights: [0.000, 0.000, 0.240, 0.349, 0.000, 0.000, 0.411]
+MSE: 637.145
+
+validation exec. time: 14447.724 s
+------------------------------------------------------
+
+------------------------------------------------------
+seismic-bumps report
+
+k value: 5
+accuracy: 93.390
+ensemble accuracies: [0.928, 0.934, 0.929, 0.930, 0.934, 0.934, 0.931]
+ensemble weights: [0.000, 0.000, 0.191, 0.542, 0.000, 0.000, 0.267]
+MSE: 636.623
+
+validation exec. time: 14481.075 s
+------------------------------------------------------

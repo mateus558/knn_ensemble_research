@@ -26,8 +26,6 @@ private:
     mltk::Point<double> start_point;
     bool has_startpoint{false}, mult_accs{false}, pre_weights;
     double mse{0.0};
-
-private:
     size_t folds{10};
     std::map<int, int> class_maper;
     mltk::Point<double> weights, accs;

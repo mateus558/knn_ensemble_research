@@ -11,6 +11,7 @@
 extern std::mutex mutex;
 extern std::map<std::string, std::ofstream> log_files;
 extern thread_pool pool;
+extern synced_stream synced_cout;
 
 mltk::Data<> load_dataset(const std::string& path, const std::string& prefix="", bool end = false, bool print_info=true);
 
