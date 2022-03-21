@@ -69,6 +69,8 @@ namespace ensemble {
                 }
                 return res;
             }
+
+
             std::string getFormulationString() override {
                 return this->m_learners[0]->getFormulationString();
             }

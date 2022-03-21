@@ -6,27 +6,37 @@
 
 std::mutex mutex;
 std::map<std::string, std::ofstream> log_files;
-thread_pool pool(10);
+thread_pool pool(20);
+synced_stream synced_cout;
 
 mltk::Data<> load_dataset(const std::string& path, const std::string& prefix, bool end, bool print_info){
     mltk::Data<> data(prefix+path, end);
 
     if(print_info) {
-        mutex.lock();
-        std::cout << "\nPath: " << prefix + path << std::endl;
-        std::cout << "Dataset name: " << data.name() << std::endl;
-        std::cout << "size: " << data.size() << std::endl;
-        std::cout << "dims: " << data.dim() << std::endl;
-        std::cout << "classes: " << mltk::Point<int>(data.classes()) << std::endl;
-        std::cout << "classes distribution: " << mltk::Point<size_t>(data.classesDistribution()) << std::endl;
-        std::cout << std::endl;
-        mutex.unlock();
+        std::stringstream point;
+        point << mltk::Point<int>(data.classes());
+        synced_cout.println("\nPath: " + prefix + path);
+        synced_cout.println("Dataset name: " + data.name());
+        synced_cout.println("size: " + std::to_string(data.size()));
+        synced_cout.println("dims: " + std::to_string(data.dim()));
+        synced_cout.println("classes: " + point.str());
+        point.clear();
+        point.str("");
+        point << mltk::Point<size_t>(data.classesDistribution());
+        synced_cout.println("classes distribution: " + point.str());
+        synced_cout.println();
+        synced_cout.println("dataset head:");
+        head(data);
     }
     return data;
 }
 
 void head(const mltk::Data<>& data, int n){
+    std::stringstream ss;
     for(int i = 0; i < n; i++){
-        std::cout << data(i) << std::endl;
+        ss << data(i);
+        synced_cout.println(ss.str());
+        ss.clear();
+        ss.str("");
     }
 }
