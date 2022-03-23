@@ -6,6 +6,7 @@
 #define KNN_RESEARCH_KNNENSEMBLELIN_HPP
 
 #include <ufjfmltk/ufjfmltk.hpp>
+#include "armadillo"
 
 namespace mltk::ensemble {
 
@@ -18,7 +19,7 @@ namespace mltk::ensemble {
     public:
         KNNEnsembleLin() = default;
 
-        KNNEnsembleLin(const Data <T> &data, size_t k, bool mult_accs = false, size_t folds = 10,
+        KNNEnsembleLin(const Data <T> &data, size_t k, bool mult_accs = false, size_t folds = 2,
                        size_t seed = 42, int verbose = 0) :
                 folds(folds), mult_accs(mult_accs) {
             this->samples = mltk::make_data<T>(data);
@@ -52,33 +53,42 @@ namespace mltk::ensemble {
     bool KNNEnsembleLin<T>::train() {
         size_t n_learners = this->m_learners.size();
         auto kfold_splits = mltk::validation::kfoldsplit(*this->samples, folds, true, this->seed);
-        std::vector<std::vector<double>> C(n_learners);
 
-        for(auto split: kfold_splits){
+
+        for(auto split: kfold_splits) {
             auto train_data = split.train;
             auto test_data = split.test;
+            std::vector<std::vector<double>> probs(n_learners, std::vector<double>(test_data.size(), 0));
+            mltk::Point C(n_learners, 0);
+            mltk::Point b(test_data.size(), 0);
+            arma::mat A(test_data.size(), n_learners);
 
             for (size_t i = 0; i < n_learners; i++) {
                 this->m_learners[i]->setSamples(train_data);
                 this->m_learners[i]->train();
-            }
-            for (size_t i = 0; i < n_learners; i++) {
+
+                size_t example = 0;
                 for (auto &test_point: test_data) {
-                    this->m_learners[i]->evaluate(*test_point);
+                    double y = this->m_learners[i]->evaluate(*test_point);
                     double prob = this->m_learners[i]->getPredictionProbability();
-                    C[i].push_back(prob);
+                    probs[i][example] = prob;
+                    if (prob > C[i]) {
+                        C[i] = prob;
+                    }
+                    if (y == test_point->Y()) {
+                        A(example, i) = 1;
+                        b[i] += prob;
+                    } else {
+                        A(example, i) = prob;
+                    }
+                    example++;
                 }
             }
         }
-        for(int i = 0; i < C.size(); i++){
-            for(int j = 0; j < C[i].size(); j++){
-                std::cout << C[i][j] << " ";
-            }
-            std::cout << std::endl;
-        }
 
-        return false;
+        return true;
     }
+
 
     template<typename T>
     double KNNEnsembleLin<T>::evaluate(const Point <T> &p, bool raw_value) {

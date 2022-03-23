@@ -25,8 +25,9 @@ mltk::Data<> load_dataset(const std::string& path, const std::string& prefix, bo
         point << mltk::Point<size_t>(data.classesDistribution());
         synced_cout.println("classes distribution: " + point.str());
         synced_cout.println();
-        synced_cout.println("dataset head:");
-        head(data);
+        synced_cout.println("------------------------------------------------------");
+        //synced_cout.println("dataset head:");
+        //head(data);
     }
     return data;
 }
