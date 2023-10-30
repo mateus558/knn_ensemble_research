@@ -77,7 +77,8 @@ namespace mltk {
     }
 
     std::pair<mltk::Point<double>, json> SimulatedAnnealing::optimize(){
-        mltk::ensemble::kNNEnsembleW<double> knn_ensemb(this->samples, this->k);
+        mltk::ensemble::kNNEnsembleW<double> knn_ensemb(this->k);
+        knn_ensemb.setSamples(mltk::make_data<double>(this->samples));
         mltk::Point<double> accs = knn_ensemb.individualAccuracies();
         // the initial solution is a discrete uniform distribution
         mltk::Point<double> initial_solution(knn_ensemb.size(), 1.0/knn_ensemb.size());
@@ -106,7 +107,7 @@ namespace mltk {
 
         accepted.push_back(std::make_pair(current_solution, current_eval));
         
-        for(it = 0; t >= this->minT && best_eval > 0; ){
+        for(it = 0; t >= this->minT; ){
         //for(it = 0; t >= this->minT && curr_avg < prev_avg && best_eval > 0; ){
             // at each temperature, we set the partial sum to the last accepted solution evaluation
             double partial_sum = accepted.back().second;
@@ -115,7 +116,7 @@ namespace mltk {
 
             // the main loop will run while the diference between the min and max avg of the last
             // minTempIter is greater than a threshould epslon
-            while(diff_avg > epslon && best_eval > 0){
+            while(diff_avg > epslon){
                 it++;
                 tit++;
 
@@ -209,7 +210,7 @@ namespace mltk {
                 std::random_device rd;
                 std::mt19937 mt(rd());
                 std::uniform_int_distribution<size_t> int_dis(0, std::numeric_limits<size_t>::max());
-                mltk::ensemble::kNNEnsembleW<double> knn_ensemb(data[i], k);
+                mltk::ensemble::kNNEnsembleW<double> knn_ensemb(k);
                 knn_ensemb.setWeights(weights.X());
                 
                 double acc = mltk::validation::kfold(data[i], knn_ensemb, 10, true, int_dis(mt)).accuracy/100;
@@ -217,8 +218,7 @@ namespace mltk {
             }
         };
 
-        pool.parallelize_loop(0, 9, loop_body, 10); 
-
+        pool.parallelize_loop(0, 10, loop_body, 10); 
         return errors.sum()/errors.size();
     }
 };

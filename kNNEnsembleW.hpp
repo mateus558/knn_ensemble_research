@@ -6,6 +6,7 @@
 #define UFJF_MLTK_KNNENSEMBLEW_HPP
 
 #include <ufjfmltk/ufjfmltk.hpp>
+#include <execution>
 #include "thread_pool.hpp"
 
 
@@ -17,38 +18,33 @@ namespace mltk {
             size_t k;
             std::string voting_type = "soft";
             mltk::Point<double> weights;
-            thread_pool pool{16};
+            thread_pool pool{5};
             std::vector<std::string> metrics;
 
         public:
             kNNEnsembleW() = default;
-            kNNEnsembleW(Data<T> &samples, size_t _k): k(_k) {
-                this->samples = make_data<T>(samples);
 
+            kNNEnsembleW(size_t _k): k(_k) {
                 this->m_learners.push_back(std::make_shared<classifier::KNNClassifier<T, metrics::dist::Euclidean<T>>>(k));
                 metrics.push_back("Euclidean");
+                
                 this->m_learners.push_back(std::make_shared<classifier::KNNClassifier<T, metrics::dist::Lorentzian<T>>>(k));
                 metrics.push_back("Lorentzian");
+                
                 this->m_learners.push_back(std::make_shared<classifier::KNNClassifier<T, metrics::dist::Cosine<T>>>(k));
                 metrics.push_back("Cosine");
+                
                 this->m_learners.push_back(std::make_shared<classifier::KNNClassifier<T, metrics::dist::Bhattacharyya<T>>>(k));
                 metrics.push_back("Bhattacharyya");
+                
                 this->m_learners.push_back(std::make_shared<classifier::KNNClassifier<T, metrics::dist::Pearson<T>>>(k));
                 metrics.push_back("Pearson");
+                
                 this->m_learners.push_back(std::make_shared<classifier::KNNClassifier<T, metrics::dist::KullbackLeibler<T>>>(k));
                 metrics.push_back("KullbackLeibler");
-                // this->m_learners.push_back(std::make_shared<classifier::KNNClassifier<T, metrics::dist::Hassanat<T>>>(k));
-                // metrics.push_back("Hassanat");
-
-                std::vector<double> w;
-                for (size_t i = 0; i < this->m_learners.size(); i++) {
-                    this->m_learners[i]->setSamples(this->samples);
-                    this->m_learners[i]->train();
-                  //  auto classifier = dynamic_cast<classifier::Classifier<T> *>(this->m_learners[i].get());
-                  //  auto acc = validation::kkfold(samples, *classifier, 10, 10, this->seed, 0).accuracy/100.0;
-                    //w.push_back(acc);
-                }
-                //this->weights = w;
+                
+                this->m_learners.push_back(std::make_shared<classifier::KNNClassifier<T, metrics::dist::Hassanat<T>>>(k));
+                metrics.push_back("Hassanat");
             }
 
             bool train() override{
@@ -80,13 +76,23 @@ namespace mltk {
 
             mltk::Point<double> individualAccuracies() {
                 mltk::Point<double> accs(this->m_learners.size(), 0.0);
-                for (size_t i = 0; i < this->m_learners.size(); i++) {
-                    this->m_learners[i]->setSamples(this->samples);
-                    this->m_learners[i]->train();
-                    auto classifier = dynamic_cast<classifier::Classifier<T> *>(this->m_learners[i].get());
-                    auto acc = validation::kkfold(*this->samples, *classifier, 10, 10).accuracy/100.0;
-                    accs[i] = acc;
-                }
+                std::transform(std::execution::par, 
+                                this->m_learners.begin(), this->m_learners.end(), accs.begin(),
+                                [this](auto learner) { 
+                                    learner->setSamples(this->samples);
+                                    learner->train();
+                                    auto classifier = dynamic_cast<classifier::Classifier<T> *>(learner.get());
+                                    auto acc = validation::kkfold(*this->samples, *classifier, 10, 10).accuracy/100.0;
+                                    return acc;
+                                }
+                );
+                // for (size_t i = 0; i < this->m_learners.size(); i++) {
+                //     this->m_learners[i]->setSamples(this->samples);
+                //     this->m_learners[i]->train();
+                //     auto classifier = dynamic_cast<classifier::Classifier<T> *>(this->m_learners[i].get());
+                //     auto acc = validation::kkfold(*this->samples, *classifier, 10, 10).accuracy/100.0;
+                //     accs[i] = acc;
+                // }
 
                 return accs;
             }
@@ -111,6 +117,7 @@ namespace mltk {
                 auto loop_body = [this, &votes, &p, &_classes](const int a, const int b){
                     for(int i = a; i < b; i++){
                         if(this->weights[i] == 0) continue;
+                        this->m_learners[i]->setSamples(this->samples);
                         auto pred = this->m_learners[i]->evaluate(p);
                         auto comp = [&pred](const auto &a) {
                                         return (a == pred);
@@ -120,8 +127,8 @@ namespace mltk {
                     }
                 };
 
-                pool.parallelize_loop(0, this->m_learners.size()-1, loop_body, this->m_learners.size());
-
+                pool.parallelize_loop(0, this->m_learners.size(), loop_body, this->m_learners.size());
+                
                 size_t max_votes = std::max_element(votes.X().begin(), votes.X().end()) - votes.X().begin();
                 return _classes[max_votes];
             }

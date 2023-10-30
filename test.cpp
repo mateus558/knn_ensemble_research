@@ -10,46 +10,53 @@ double kkfold(mltk::Data<double> samples, mltk::Point<double> weights, size_t k)
         thread_pool pool;
         mltk::Point<double> errors(10);
         std::vector<mltk::Data<double>> data(10);
+        auto data_split = mltk::validation::partTrainTest(samples, 3);
 
-        for(size_t i = 0; i < 10; i++){
-            data[i] = samples.copy();
-        }
+        //pool.parallelize_loop(0, 9, [&data, &errors, weights, k] (const int a, const int b) -> void {
+        mltk::ensemble::kNNEnsembleW<double> knn_ensemb(k);
+        knn_ensemb.setWeights(weights.X());
+        
+        std::cout << "test size: " << data_split.test.size() << std::endl;
+        std::cout << "class dist: " << mltk::Point<size_t>(data_split.test.classesDistribution()) << std::endl;
+       // std::cout << data_split.test << std::endl;
 
-        pool.parallelize_loop(0, 9, [&data, &errors, weights, k] (const int a, const int b) -> void {
-            for(size_t i = a; i < b; i++){
-                mltk::ensemble::kNNEnsembleW<double> knn_ensemb(data[i], k);
-                knn_ensemb.setWeights(weights.X());
-                
-                double acc = mltk::validation::kfold(data[i], knn_ensemb, 10).accuracy/100;
-                std::cout << "acc" << i << ": " << acc << std::endl;
-                errors[i] += 1.0 - acc;
+        size_t errors_count = 0;
+        for(auto point: data_split.test){
+            auto pred = knn_ensemb.evaluate(*point);
+          //  std::cout << pred << " " << point->Y() << std::endl;
+            if(pred != point->Y()){
+                errors_count++;
             }
-        }, 10); 
+        }
+        std::cout << "errors: " << errors_count << std::endl;
+        std::cout << "acc: " << 1.0 - (double)errors_count/data_split.test.size() << std::endl;
+
+        double acc = mltk::validation::kkfold(data_split.test, knn_ensemb, 10,10).accuracy/100;
+        std::cout << "acc" << 0 << ": " << acc << std::endl;
+        //errors[0] += 1.0 - acc;
+        
+        //}, 10); 
 
         return errors.sum()/errors.size();
     }
 
 
 int main(){
-    std::vector<std::string> datasets = {"ThoraricSurgery.arff", "seismic-bumps.arff",
-                                         "vehicle.csv"};
+    std::vector<std::string> datasets = {"bupa.data"};
 
-    std::vector<std::vector<double>> weights = {{0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285}, 
-                                                {0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285}, 
-                                                {0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285}};
+    std::vector<std::vector<double>> weights = {{0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285}};
     
-    bool at_end[] = {true, true, false};
+    bool at_end[] = {false};
+    size_t i = 0;
+    
+    for(std::string dataset: datasets){
+        auto data = load_dataset(dataset, DATA_PATH,  at_end[i]);
 
-    while(true){
-        size_t i = 0;
-        for(std::string dataset: datasets){
-            auto data = load_dataset(dataset, DATA_PATH,  at_end[i]);
+        std::cout << "Accuracy: " << (1-kkfold(data, weights[i], 1))*100 << std::endl;
 
-            std::cout << "Accuracy: " << (1-kkfold(data, weights[i], 3))*100 << std::endl;
-
-            i++;
-        }
+        i++;
     }
+    
 
     return 0;
 }

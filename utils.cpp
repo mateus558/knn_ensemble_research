@@ -10,6 +10,7 @@ thread_pool pool(20);
 synced_stream synced_cout;
 
 mltk::Data<> load_dataset(const std::string& path, const std::string& prefix, bool end, bool print_info){
+    std::cout << prefix+path << std::endl;
     mltk::Data<> data(prefix+path, end);
 
     if(print_info) {

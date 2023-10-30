@@ -38,7 +38,7 @@ bool createFolder(const std::string& folderName) {
 }
 
 void test() {
-    thread_pool pool;
+    thread_pool pool(2);
     mltk::Data samples = mltk::datasets::make_blobs(1500).dataset;
     auto data_split = mltk::validation::partTrainTest(samples, 3);
     std::vector<size_t> ks = {3, 5, 7};
@@ -47,7 +47,7 @@ void test() {
 
     auto results = sa.optimize();
 
-    mltk::ensemble::kNNEnsembleW<double> knn_ensemb(data_split.test, 7);
+    mltk::ensemble::kNNEnsembleW<double> knn_ensemb(7);
     knn_ensemb.setWeights(results.first.X());
 
     std::cout << "Accuracy: " << mltk::validation::kkfold(data_split.test, knn_ensemb, 10, 10).accuracy << std::endl;
@@ -56,13 +56,12 @@ void test() {
 }
 
 void experiment() {
-    thread_pool exp_pool(3);
-    std::vector<std::string> datasets = {"bupa.data", "ionosphere.data", "biodegradation.csv", "wdbc.data", "ThoraricSurgery.arff", 
-                                         "seismic-bumps.arff", "vehicle.csv", "pima.data", "sonar.data"};
+    thread_pool exp_pool(8);
+    std::vector<std::string> datasets = {"bupa.data", "pima.data", "sonar.data", "ionosphere.data", "biodegradation.csv", "wdbc.data", "ThoraricSurgery.arff", 
+                                         "seismic-bumps.arff", "vehicle.csv"};
     //std::vector<std::string> datasets = {"bupa.data"};
     //                                      "biodegradation.csv"};
-    bool at_end[] = {false, false, false, false, true, true, false, false, false};
-    //bool at_end[] = {false};
+    bool at_end[] = {false, false, false, false, false, false, true, true, false};
 
     auto load = [&exp_pool](const std::string& dataset, bool at_end) {
         std::cout << "Loading dataset: " << dataset << std::endl;
@@ -71,8 +70,7 @@ void experiment() {
         synced_cout.println("dataset: " + dataset);
         auto data = load_dataset(dataset, DATA_PATH, at_end);
         auto data_split = mltk::validation::partTrainTest(data, 3);
-
-        std::vector<size_t> ks = {3, 5, 7};
+        std::vector<size_t> ks = {1, 3, 5, 7};
         //std::vector<size_t> ks = {7};
 
         for(auto k : ks){
@@ -84,9 +82,8 @@ void experiment() {
                 auto results = sa.optimize();
                 auto json_report = results.second;
 
-                mltk::ensemble::kNNEnsembleW<double> knn_ensemb(data_split.test, k);
+                mltk::ensemble::kNNEnsembleW<double> knn_ensemb(k);
                 knn_ensemb.setWeights(results.first.X());
-
 
                 // Stop the clock
                 auto end = std::chrono::high_resolution_clock::now();
