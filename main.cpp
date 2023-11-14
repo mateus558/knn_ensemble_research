@@ -77,7 +77,7 @@ void experiment() {
             auto experiment = [results_path](mltk::validation::TrainTestPair<double> data_split, size_t k) {
                 auto start = std::chrono::high_resolution_clock::now();
                 std::ofstream json(results_path + "/results_k_" + std::to_string(k) + ".json");
-                mltk::SimulatedAnnealing sa(data_split.train, k, 8, 0.9, 50);    
+                mltk::SimulatedAnnealing sa(data_split.train, k, 10, 8, 0.9, 50);    
 
                 auto results = sa.optimize();
                 auto json_report = results.second;

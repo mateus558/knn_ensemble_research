@@ -20,6 +20,7 @@ namespace mltk {
             mltk::Point<double> weights;
             thread_pool pool{5};
             std::vector<std::string> metrics;
+            std::map<std::string, std::shared_ptr<metrics::dist::BaseMatrix>> distanceMatrices;
 
         public:
             kNNEnsembleW() = default;
@@ -52,6 +53,83 @@ namespace mltk {
                 return true;
             }
 
+            void setDistanceMatrix(std::string metric, std::shared_ptr<metrics::dist::BaseMatrix> distanceMatrix) {
+                auto it = std::find(this->metrics.begin(), this->metrics.end(), metric);
+
+                if (it != this->metrics.end()) {
+                    auto idx = it - this->metrics.begin();
+                    auto learner = this->m_learners[idx];
+                    std::string metric = this->metrics[idx];
+
+                    if(metric == "Euclidean") {
+                        auto knn = this->castToKNN<metrics::dist::Euclidean>(learner);
+                        knn->setPrecomputedDistances(*distanceMatrix);
+                    } else if(metric == "Lorentzian") {
+                        auto knn = this->castToKNN<metrics::dist::Lorentzian>(learner);
+                        knn->setPrecomputedDistances(*distanceMatrix);
+                    } else if(metric == "Cosine") {
+                        auto knn = this->castToKNN<metrics::dist::Cosine>(learner);
+                        knn->setPrecomputedDistances(*distanceMatrix);
+                    } else if(metric == "Bhattacharyya") {
+                        auto knn = this->castToKNN<metrics::dist::Bhattacharyya>(learner);
+                        knn->setPrecomputedDistances(*distanceMatrix);
+                    } else if(metric == "Pearson") {
+                        auto knn = this->castToKNN<metrics::dist::Pearson>(learner);
+                        knn->setPrecomputedDistances(*distanceMatrix);
+                    } else if(metric == "KullbackLeibler") {
+                        auto knn = this->castToKNN<metrics::dist::KullbackLeibler>(learner);
+                        knn->setPrecomputedDistances(*distanceMatrix);
+                    } else if(metric == "Hassanat") {
+                        auto knn = this->castToKNN<metrics::dist::Hassanat>(learner);
+                        knn->setPrecomputedDistances(*distanceMatrix);
+                    }
+                }
+            }
+
+            template<template<typename> class DistanceFunc>
+            std::shared_ptr<classifier::KNNClassifier<T, DistanceFunc<T>>> castToKNN(std::shared_ptr<mltk::Learner<T>> learner) {
+                return std::dynamic_pointer_cast<classifier::KNNClassifier<T, DistanceFunc<T>>>(learner);
+            }
+            
+            template<template<typename> class DistanceFunc>
+            std::shared_ptr<metrics::dist::BaseMatrix> computeDistanceMatrix(std::shared_ptr<mltk::Learner<T>> learner) {
+                auto knnClassifier = castToKNN<DistanceFunc>(learner);
+                if(knnClassifier != nullptr){
+                    auto distances = knnClassifier->precomputeDistances(*this->samples);
+                    return std::make_shared<metrics::dist::DistanceMatrix<DistanceFunc<T>>>(distances);
+                }
+                return nullptr;
+            }
+
+            std::map<std::string, std::shared_ptr<metrics::dist::BaseMatrix>> computeDistances() {
+                std::map<std::string, std::shared_ptr<metrics::dist::BaseMatrix>> distance_matrices;
+                    // Create metrics mapping
+                std::map<std::string, std::function<std::shared_ptr<metrics::dist::BaseMatrix>(std::shared_ptr<mltk::Learner<T>>)>> metricsMap = {
+                    {"Euclidean", [this](std::shared_ptr<mltk::Learner<T>> learner) { return this->computeDistanceMatrix<metrics::dist::Euclidean>(learner); }},
+                    {"Lorentzian", [this](std::shared_ptr<mltk::Learner<T>> learner) { return this->computeDistanceMatrix<metrics::dist::Lorentzian>(learner); }},
+                    {"Cosine", [this](std::shared_ptr<mltk::Learner<T>> learner) { return this->computeDistanceMatrix<metrics::dist::Cosine>(learner); }},
+                    {"Bhattacharyya", [this](std::shared_ptr<mltk::Learner<T>> learner) { return this->computeDistanceMatrix<metrics::dist::Bhattacharyya>(learner); }},
+                    {"Pearson", [this](std::shared_ptr<mltk::Learner<T>> learner) { return this->computeDistanceMatrix<metrics::dist::Pearson>(learner); }},
+                    {"KullbackLeibler", [this](std::shared_ptr<mltk::Learner<T>> learner) { return this->computeDistanceMatrix<metrics::dist::KullbackLeibler>(learner); }},
+                    {"Hassanat", [this](std::shared_ptr<mltk::Learner<T>> learner) { return this->computeDistanceMatrix<metrics::dist::Hassanat>(learner); }},
+                };
+
+
+                for(size_t i = 0; i < this->m_learners.size(); i++) {
+                    auto learner = this->m_learners[i];
+                    auto metric = this->metrics[i];
+
+                    auto it = metricsMap.find(metric);
+                    if (it != metricsMap.end()) {
+                        auto matrix = it->second(learner);
+                        distance_matrices[metric] = matrix;
+                    }
+                }
+                
+                return distance_matrices;
+            }
+
+
             double maxAccuracy(){
                 std::vector<int> ids(this->samples->size(), 0);
 
@@ -76,8 +154,7 @@ namespace mltk {
 
             mltk::Point<double> individualAccuracies() {
                 mltk::Point<double> accs(this->m_learners.size(), 0.0);
-                std::transform(std::execution::par, 
-                                this->m_learners.begin(), this->m_learners.end(), accs.begin(),
+                std::transform(this->m_learners.begin(), this->m_learners.end(), accs.begin(),
                                 [this](auto learner) { 
                                     learner->setSamples(this->samples);
                                     learner->train();
@@ -103,7 +180,7 @@ namespace mltk {
 
             mltk::Point<double> getWeights(){ return this->weights; }
 
-            double evaluate(const Point<T> &p, bool raw_value = false) override {
+            double evaluate(const Point<double> &p, bool raw_value = false) override {
                 auto _classes = this->samples->classes();
                 mltk::Point<double> votes(_classes.size(), 0.0);
 
