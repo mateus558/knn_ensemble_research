@@ -27,4 +27,7 @@ class Experiment: public CLI::App {
 
     private:
         size_t evaluate_fold(mltk::validation::TrainTestPair<double> fold, size_t k, std::map<std::string, std::shared_ptr<mltk::metrics::dist::BaseMatrix>> distances);
+
+        template< typename Fn >
+        void parallel_kkfold(mltk::Data<double> &data, size_t totalTasks, Fn partial_kfold); 
 };

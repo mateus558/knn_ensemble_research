@@ -33,7 +33,6 @@ void Experiment::run() {
             std::cout << "[" << data.name() << "] Creating " + std::to_string(n_folds) + "-fold partitions." << std::endl;
             auto folds = mltk::validation::kfoldsplit(data, n_folds);
             
-
             std::string dataset_results_folder = results_folder + data.name() + "/";
                 
             if(!createPath(dataset_results_folder, err)) {
@@ -63,42 +62,46 @@ void Experiment::run() {
                 return _errors;
             };
 
-            size_t totalTasks = folds.size();
-            size_t numBatches = (totalTasks > this->threads) ? this->threads : totalTasks;
-            size_t batchSize = std::ceil(totalTasks/double(numBatches));
-
-            mltk::Point<std::future<mltk::Point<size_t>>> futuresPool(numBatches);
-            for(size_t i = 0; i < numBatches; i++){
-                size_t start = i * batchSize;
-                size_t end = start + batchSize;
-                
-                futuresPool[i] = std::async(std::launch::async, partial_kfold, start, end);
-            }
-
-            mltk::Point<size_t> consolidatedResults(totalTasks);
-            
-            mltk::Timer timer1;
-            for(size_t i = 0; i < futuresPool.size(); i++) {
-                auto foldResult = futuresPool[i].get();
-                
-                for(size_t j = 0; j < foldResult.size(); j++) {
-                    consolidatedResults[i + j] = foldResult[j];
-                }
-            }
-
-            size_t total_errors = consolidatedResults.sum();
-            size_t accuracy = 1.0 - (double)total_errors/consolidatedResults.size();
-
-            auto elapsed = timer1.elapsed();
-
-            std::cout << std::endl;
-            std::cout << "[" << data.name() << "]" << "Total errors: " << std::to_string(total_errors) << std::endl;
-            std::cout << "[" << data.name() << "]" << "Accuracy: " << std::to_string(accuracy * 100) << std::endl;
-            std::cout << "[" << data.name() << "]" << "Execution time: " << std::to_string(elapsed) << " ms" << std::endl;            
+            this->parallel_kkfold(data, folds.size(), partial_kfold);                        
         }
     }
     auto elapsed = timer.elapsed();
     std::cout << "\n\nTotal execution time: " << elapsed << " ms" << std::endl;
+}
+
+template< typename Fn >
+void Experiment::parallel_kkfold(mltk::Data<double> &data, size_t totalTasks, Fn partial_kfold) {
+    size_t numBatches = (totalTasks > this->threads) ? this->threads : totalTasks;
+    size_t batchSize = std::ceil(totalTasks/double(numBatches));
+
+    mltk::Point<std::future<mltk::Point<size_t>>> futuresPool(numBatches);
+    for(size_t i = 0; i < numBatches; i++){
+        size_t start = i * batchSize;
+        size_t end = start + batchSize;
+        
+        futuresPool[i] = std::async(std::launch::async, partial_kfold, start, end);
+    }
+
+    mltk::Point<size_t> consolidatedResults(totalTasks);
+    
+    mltk::Timer timer1;
+    for(size_t i = 0; i < futuresPool.size(); i++) {
+        auto foldResult = futuresPool[i].get();
+        
+        for(size_t j = 0; j < foldResult.size(); j++) {
+            consolidatedResults[i + j] = foldResult[j];
+        }
+    }
+
+    size_t total_errors = consolidatedResults.sum();
+    size_t accuracy = 1.0 - (double)total_errors/consolidatedResults.size();
+
+    auto elapsed = timer1.elapsed();
+
+    std::cout << std::endl;
+    std::cout << "[" << data.name() << "]" << "Total errors: " << std::to_string(total_errors) << std::endl;
+    std::cout << "[" << data.name() << "]" << "Accuracy: " << std::to_string(accuracy * 100) << std::endl;
+    std::cout << "[" << data.name() << "]" << "Execution time: " << std::to_string(elapsed) << " ms" << std::endl;
 }
 
 size_t Experiment::evaluate_fold(mltk::validation::TrainTestPair<double> fold, size_t k, std::map<std::string, std::shared_ptr<mltk::metrics::dist::BaseMatrix>> distances) {
