@@ -99,9 +99,9 @@ void Experiment::parallel_kfold(mltk::Data<double> &data, size_t totalTasks, Fn 
     auto elapsed = timer1.elapsed();
 
     std::cout << std::endl;
-    std::cout << "[" << data.name() << "]" << "Total errors: " << std::to_string(total_errors) << std::endl;
-    std::cout << "[" << data.name() << "]" << "Accuracy: " << std::to_string(accuracy * 100) << std::endl;
-    std::cout << "[" << data.name() << "]" << "Execution time: " << std::to_string(elapsed) << " ms" << std::endl;
+    std::cout << "[" << data.name() << "]" << "Total errors: " << total_errors << std::endl;
+    std::cout << "[" << data.name() << "]" << "Accuracy: " << accuracy * 100 << std::endl;
+    std::cout << "[" << data.name() << "]" << "Execution time: " << elapsed << " ms" << std::endl;
 }
 
 size_t Experiment::evaluate_fold(mltk::validation::TrainTestPair<double> fold, size_t k, std::map<std::string, std::shared_ptr<mltk::metrics::dist::BaseMatrix>> distances) {
