@@ -3,6 +3,18 @@
 #include "SimulatedAnnealing/SimulatedAnnealing.hpp"
 #include "SimulatedAnnealing/kNNEnsembleW.hpp"
 
+void Experiment::add_parameters() {
+    this->add_option("-o,--output", this->results_folder, "Folder where the experiments results will be saved.");
+    this->add_option("-d,--data", this->data_folder, "Folder where the datasets are stored.");
+    this->add_option("-t,--threads", this->max_threads, "The maximum number of threads used for paralelization.");
+
+    this->add_option("-f,--folds", this->n_folds, "Number of folds utilized to measure SA performace metrics.");
+
+    this->add_option("--sa_folds", this->sa_folds, "Number of folds utilized to obtain objective function value on SA.");
+    this->add_option("--sa_temp", this->sa_temp, "Initial temperature that SA must start.");
+    this->add_option("--min_temp_iter", this->min_temp_iter, "Minimum number of iterations that SA must execute in a temperature.");
+    this->add_option("--alpha", this->alpha, "Decay of the temperature on SA, where, for example, 0.9 means that it will decay 10\% at each temperature change.");
+}
 
 void Experiment::run() {  	
     this->threads = (this->n_folds > this->max_threads) ? this->max_threads : this->n_folds;
@@ -11,7 +23,7 @@ void Experiment::run() {
     mltk::Timer timer;
     std::error_code err;
 
-    if(!createPath(results_folder, err)) {
+    if(!createPath(this->results_folder, err)) {
         std::cout << "Failed to create path, err: " << err.message() << std::endl;
         return;
     }
@@ -137,17 +149,4 @@ size_t Experiment::evaluate_fold(mltk::validation::TrainTestPair<double> fold, s
     double acc = 1.0 - (double)errors/fold.test.size();
 
     return errors;
-}
-
-void Experiment::add_parameters() {
-    this->add_option("-o,--output", this->results_folder, "Folder where the experiments results will be saved.");
-    this->add_option("-d,--data", this->data_folder, "Folder where the datasets are stored.");
-    this->add_option("-t,--threads", this->max_threads, "The maximum number of threads used for paralelization.");
-
-    this->add_option("-f,--folds", this->n_folds, "Number of folds utilized to measure SA performace metrics.");
-
-    this->add_option("--sa_folds", this->sa_folds, "Number of folds utilized to obtain objective function value on SA.");
-    this->add_option("--sa_temp", this->sa_temp, "Initial temperature that SA must start.");
-    this->add_option("--min_temp_iter", this->min_temp_iter, "Minimum number of iterations that SA must execute in a temperature.");
-    this->add_option("--alpha", this->alpha, "Decay of the temperature on SA, where, for example, 0.9 means that it will decay 10\% at each temperature change.");
 }
