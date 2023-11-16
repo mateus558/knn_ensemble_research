@@ -4,22 +4,34 @@
 #include "SimulatedAnnealing/kNNEnsembleW.hpp"
 
 void Experiment::add_parameters() {
-    this->add_option("-o,--output", this->results_folder, "Folder where the experiments results will be saved.");
-    this->add_option("-d,--data", this->data_folder, "Folder where the datasets are stored.");
-    this->add_option("-t,--threads", this->max_threads, "The maximum number of threads used for paralelization.");
+    this->add_option("-o,--output", this->results_folder, "Folder where the experiments results will be saved.")
+        ->group("Experiment");
+    this->add_option("-p,--data", this->data_folder, "Folder where the datasets are stored.")
+        ->group("Experiment");
+    this->add_option("-t,--threads", this->max_threads, "The maximum number of threads used for paralelization.")
+        ->group("Experiment");
+    this->add_option<std::vector<std::string>>("-d,--datasets", this->datasets)
+        ->description("Datasets that will be used during the experiment, remember that they must be at the location defined by the parameter --data.")
+        ->group("Experiment")
+        ->delimiter(',');
+    this->add_option("-f,--folds", this->n_folds, "Number of folds utilized to measure SA performace metrics.")
+        ->group("Experiment");
 
-    this->add_option("-f,--folds", this->n_folds, "Number of folds utilized to measure SA performace metrics.");
-
-    this->add_option("--sa_folds", this->sa_folds, "Number of folds utilized to obtain objective function value on SA.");
-    this->add_option("--sa_temp", this->sa_temp, "Initial temperature that SA must start.");
-    this->add_option("--min_temp_iter", this->min_temp_iter, "Minimum number of iterations that SA must execute in a temperature.");
-    this->add_option("--alpha", this->alpha, "Decay of the temperature on SA, where, for example, 0.9 means that it will decay 10\% at each temperature change.");
+    this->add_option<std::vector<size_t>>("-k,--ks", this->ks, "knn k values that will be used by the knn ensemble.")
+        ->group("Simulated Annealing (SA)")
+        ->delimiter(',');
+    this->add_option("-n,--n_folds", this->sa_folds, "Number of folds utilized to obtain objective function value on SA.")
+        ->group("Simulated Annealing (SA)");
+    this->add_option("-T,--temperature", this->sa_temp, "Temperature that SA must start.")
+        ->group("Simulated Annealing (SA)");
+    this->add_option("-m,--min_temp_iter", this->min_temp_iter, "Minimum number of iterations that SA must execute in a temperature.")
+        ->group("Simulated Annealing (SA)");
+    this->add_option("-a,--alpha", this->alpha, "Decay of the temperature on SA, where, for example, 0.9 means that it will decay 10\% at each temperature change.")
+        ->group("Simulated Annealing (SA)");
 }
 
 void Experiment::run() {  	
     this->threads = (this->n_folds > this->max_threads) ? this->max_threads : this->n_folds;
-    std::vector<std::string> datasets = {"wine.data"};
-    std::vector<size_t> ks = {1, 3, 5, 7};
     mltk::Timer timer;
     std::error_code err;
 
@@ -32,7 +44,7 @@ void Experiment::run() {
         mltk::Data<double> data((data_folder + datasets[i]).c_str());	
         std::map<std::string, std::shared_ptr<mltk::metrics::dist::BaseMatrix>> distances;
 
-        for(const size_t k: ks){
+        for(const size_t k: this->ks){
             mltk::ensemble::kNNEnsembleW<double> ensemb(k);
 
             ensemb.setSamples(mltk::make_data<double>(data));

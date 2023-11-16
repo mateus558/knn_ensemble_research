@@ -1,11 +1,8 @@
 cmake_minimum_required(VERSION 3.15)
 project(simulated_annealing)
 
-
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
-find_package(TBB REQUIRED COMPONENTS tbb)
 
 include(FetchContent)
 
@@ -33,7 +30,7 @@ add_library(experiment STATIC
 )
 
 target_link_libraries(sa nlohmann_json::nlohmann_json ufjfmltk)
-target_link_libraries(experiment sa tbb CLI11)
+target_link_libraries(experiment sa CLI11)
 
 add_executable(knn_ensemb_optimize main.cpp utils.cpp)
 target_link_libraries(knn_ensemb_optimize experiment)
