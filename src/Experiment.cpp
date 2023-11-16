@@ -62,7 +62,7 @@ void Experiment::run() {
                 return _errors;
             };
 
-            this->parallel_kkfold(data, folds.size(), partial_kfold);                        
+            this->parallel_kfold(data, folds.size(), partial_kfold);                        
         }
     }
     auto elapsed = timer.elapsed();
@@ -70,7 +70,7 @@ void Experiment::run() {
 }
 
 template< typename Fn >
-void Experiment::parallel_kkfold(mltk::Data<double> &data, size_t totalTasks, Fn partial_kfold) {
+void Experiment::parallel_kfold(mltk::Data<double> &data, size_t totalTasks, Fn partial_kfold) {
     size_t numBatches = (totalTasks > this->threads) ? this->threads : totalTasks;
     size_t batchSize = std::ceil(totalTasks/double(numBatches));
 
