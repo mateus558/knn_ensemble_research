@@ -1,5 +1,5 @@
-#include "SimulatedAnnealing.hpp"
-#include "kNNEnsembleW.hpp"
+#include "SimulatedAnnealing/SimulatedAnnealing.hpp"
+
 #include <random>
 #include <cmath>
 #include <nlohmann/json.hpp>

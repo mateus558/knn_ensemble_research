@@ -3,7 +3,7 @@
 #include <ufjfmltk/ufjfmltk.hpp>
 #include <nlohmann/json.hpp>
 
-#include "kNNEnsembleW.hpp"
+#include "SimulatedAnnealing/kNNEnsembleW.hpp"
 
 using json = nlohmann::json;
 

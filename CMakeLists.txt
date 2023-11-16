@@ -18,18 +18,31 @@ FetchContent_MakeAvailable(CLI11)
 FetchContent_Declare(
         ufjfmltk
         # Specify the commit you depend on and update it regularly.
-        URL https://github.com/mateus558/UFJF-Machine-Learning-Toolkit/archive/refs/tags/V0.56.0-beta.tar.gz
+        URL https://github.com/mateus558/UFJF-Machine-Learning-Toolkit/archive/refs/tags/V0.56.2-beta.tar.gz
 )
 FetchContent_MakeAvailable(ufjfmltk)
 
-add_executable(experiment experiment.cpp SimulatedAnnealing.cpp utils.cpp)
-target_link_libraries(experiment tbb CLI11 ufjfmltk nlohmann_json::nlohmann_json)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 
-add_executable(simulated_annealing main.cpp SimulatedAnnealing.cpp utils.cpp)
-target_link_libraries(simulated_annealing tbb ufjfmltk nlohmann_json::nlohmann_json)
+add_library(sa SHARED
+    src/SimulatedAnnealing.cpp
+)
 
-add_executable(ind_acc ind_accs.cpp SimulatedAnnealing.cpp utils.cpp)
-target_link_libraries(ind_acc tbb ufjfmltk nlohmann_json::nlohmann_json)
+add_library(experiment SHARED
+    src/Experiment.cpp
+)
 
-add_executable(test test.cpp SimulatedAnnealing.cpp utils.cpp)
-target_link_libraries(test tbb ufjfmltk nlohmann_json::nlohmann_json)
+target_link_libraries(sa nlohmann_json::nlohmann_json ufjfmltk)
+target_link_libraries(experiment sa tbb CLI11)
+
+add_executable(main main.cpp utils.cpp)
+target_link_libraries(main experiment)
+
+add_executable(simulated_annealing main.cpp utils.cpp)
+target_link_libraries(simulated_annealing tbb sa ufjfmltk nlohmann_json::nlohmann_json)
+
+add_executable(ind_acc ind_accs.cpp utils.cpp)
+target_link_libraries(ind_acc tbb sa ufjfmltk nlohmann_json::nlohmann_json)
+
+add_executable(test test.cpp utils.cpp)
+target_link_libraries(test tbb sa ufjfmltk nlohmann_json::nlohmann_json)
