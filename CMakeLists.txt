@@ -28,21 +28,21 @@ add_library(sa SHARED
     src/SimulatedAnnealing.cpp
 )
 
-add_library(experiment SHARED
+add_library(experiment STATIC
     src/Experiment.cpp
 )
 
 target_link_libraries(sa nlohmann_json::nlohmann_json ufjfmltk)
 target_link_libraries(experiment sa tbb CLI11)
 
-add_executable(main main.cpp utils.cpp)
-target_link_libraries(main experiment)
+add_executable(knn_ensemb_optimize main.cpp utils.cpp)
+target_link_libraries(knn_ensemb_optimize experiment)
 
-add_executable(simulated_annealing main.cpp utils.cpp)
-target_link_libraries(simulated_annealing tbb sa ufjfmltk nlohmann_json::nlohmann_json)
+# add_executable(simulated_annealing main.cpp utils.cpp)
+# target_link_libraries(simulated_annealing tbb sa ufjfmltk nlohmann_json::nlohmann_json)
 
-add_executable(ind_acc ind_accs.cpp utils.cpp)
-target_link_libraries(ind_acc tbb sa ufjfmltk nlohmann_json::nlohmann_json)
+# add_executable(ind_acc ind_accs.cpp utils.cpp)
+# target_link_libraries(ind_acc tbb sa ufjfmltk nlohmann_json::nlohmann_json)
 
-add_executable(test test.cpp utils.cpp)
-target_link_libraries(test tbb sa ufjfmltk nlohmann_json::nlohmann_json)
+# add_executable(test test.cpp utils.cpp)
+# target_link_libraries(test tbb sa ufjfmltk nlohmann_json::nlohmann_json)

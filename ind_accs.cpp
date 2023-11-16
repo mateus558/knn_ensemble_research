@@ -1,6 +1,5 @@
 #include <iostream>
 #include <ufjfmltk/ufjfmltk.hpp>
-#include "SimulatedAnnealing1.hpp"
 #include "kNNEnsembleW.hpp"
 #include "thread_pool.hpp"
 #include "utils.h"
