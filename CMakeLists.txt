@@ -18,7 +18,7 @@ FetchContent_MakeAvailable(CLI11)
 FetchContent_Declare(
         ufjfmltk
         # Specify the commit you depend on and update it regularly.
-        URL https://github.com/mateus558/UFJF-Machine-Learning-Toolkit/archive/refs/tags/V0.56.0-beta.tar.gz
+        URL https://github.com/mateus558/UFJF-Machine-Learning-Toolkit/archive/refs/tags/V0.56.2-beta.tar.gz
 )
 FetchContent_MakeAvailable(ufjfmltk)
 
