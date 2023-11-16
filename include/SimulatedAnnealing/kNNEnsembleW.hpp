@@ -163,13 +163,6 @@ namespace mltk {
                                     return acc;
                                 }
                 );
-                // for (size_t i = 0; i < this->m_learners.size(); i++) {
-                //     this->m_learners[i]->setSamples(this->samples);
-                //     this->m_learners[i]->train();
-                //     auto classifier = dynamic_cast<classifier::Classifier<T> *>(this->m_learners[i].get());
-                //     auto acc = validation::kkfold(*this->samples, *classifier, 10, 10).accuracy/100.0;
-                //     accs[i] = acc;
-                // }
 
                 return accs;
             }
