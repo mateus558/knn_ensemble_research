@@ -6,7 +6,11 @@
 
 class Experiment: public CLI::App {
     private:
-        std::string results_folder{"../results"};
+        std::string results_folder{"../results/"};
+        std::string data_folder{"../datasets/"};
+        size_t max_threads{std::thread::hardware_concurrency()};
+        size_t threads{std::thread::hardware_concurrency()};
+        size_t n_folds{10};
 
     public:
         using CLI::App::App;
