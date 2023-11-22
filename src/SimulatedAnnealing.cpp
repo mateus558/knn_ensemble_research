@@ -123,7 +123,7 @@ namespace mltk {
 
         // global number of iterations
         size_t it;
-        for(it = 0; t >= this->minT; ){
+        for(it = 0; t >= this->minT && best_eval > 0; ){
         //for(it = 0; t >= this->minT && curr_avg < prev_avg && best_eval > 0; ){
             // at each temperature, we set the partial sum to the last accepted solution evaluation
             double partial_sum = accepted.back().second;

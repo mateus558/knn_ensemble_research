@@ -33,7 +33,7 @@ target_link_libraries(sa nlohmann_json::nlohmann_json ufjfmltk)
 target_link_libraries(experiment sa CLI11)
 
 add_executable(knn_ensemb_optimize main.cpp utils.cpp)
-target_link_libraries(knn_ensemb_optimize experiment)
+target_link_libraries(knn_ensemb_optimize tbb experiment)
 
 # add_executable(simulated_annealing main.cpp utils.cpp)
 # target_link_libraries(simulated_annealing tbb sa ufjfmltk nlohmann_json::nlohmann_json)

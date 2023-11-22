@@ -57,7 +57,7 @@ void Experiment::run() {
             std::cout << "[" << data.name() << "] Creating " + std::to_string(n_folds) + "-fold partitions." << std::endl;
             auto folds = mltk::validation::kfoldsplit(data, n_folds);
             
-            std::string dataset_results_folder = results_folder + data.name() + "/";
+            std::string dataset_results_folder = results_folder + data.name() + "/" + std::to_string(k) + "/";
                 
             if(!createPath(dataset_results_folder, err)) {
                 std::cout << "Failed to create path, err: " << err.message() << std::endl;
@@ -65,7 +65,7 @@ void Experiment::run() {
             }
 
             auto partial_kfold = [folds, k, distances, dataset_results_folder, this](const int a, const int b) {
-                mltk::Point<size_t> _errors(b - a);
+                std::vector<std::pair<size_t, std::vector<size_t>>> _errors(b - a);
                 for(size_t i = a; i < b; i++){
                     auto fold = folds[i];
 
@@ -76,12 +76,17 @@ void Experiment::run() {
                         std::cout << "Failed to create path, err: " << err.message() << std::endl;
                         continue;
                     }
+                    std::ofstream json(data_results_folder + "results_fold" + std::to_string(i+1) + ".json");
 
                     fold.train.write(data_results_folder + "train", "csv");
                     fold.test.write(data_results_folder + "test", "csv");
 
-                    size_t errors = this->evaluate_fold(fold, k, distances);
-                    _errors[i - a] = errors;
+                    auto errors = this->evaluate_fold(fold, k, distances, json);
+                    
+                    _errors[i - a].first = errors.first;
+                    _errors[i - a].second = errors.second;
+
+                    json.close();
                 }
                 return _errors;
             };
@@ -98,7 +103,7 @@ void Experiment::parallel_kfold(mltk::Data<double> &data, size_t totalTasks, Fn 
     size_t numBatches = (totalTasks > this->threads) ? this->threads : totalTasks;
     size_t batchSize = std::ceil(totalTasks/double(numBatches));
 
-    mltk::Point<std::future<mltk::Point<size_t>>> futuresPool(numBatches);
+    mltk::Point<std::future<std::vector<std::pair<size_t, std::vector<size_t>>>>> futuresPool(numBatches);
     for(size_t i = 0; i < numBatches; i++){
         size_t start = i * batchSize;
         size_t end = start + batchSize;
@@ -106,19 +111,22 @@ void Experiment::parallel_kfold(mltk::Data<double> &data, size_t totalTasks, Fn 
         futuresPool[i] = std::async(std::launch::async, partial_kfold, start, end);
     }
 
-    mltk::Point<size_t> consolidatedResults(totalTasks);
-    
+    mltk::Point<size_t> errors(totalTasks);
+    std::vector<size_t> errors_ids;
     mltk::Timer timer1;
+
     for(size_t i = 0; i < futuresPool.size(); i++) {
         auto foldResult = futuresPool[i].get();
         
         for(size_t j = 0; j < foldResult.size(); j++) {
-            consolidatedResults[i + j] = foldResult[j];
+            errors[i + j] = foldResult[j].first;
+            auto fold_errors_ids = foldResult[j].second;
+            errors_ids.insert(errors_ids.end(), fold_errors_ids.begin(), fold_errors_ids.end());
         }
     }
 
-    size_t total_errors = consolidatedResults.sum();
-    size_t accuracy = 1.0 - (double)total_errors/consolidatedResults.size();
+    size_t total_errors = errors.sum();
+    size_t accuracy = 1.0 - (double)total_errors/data.size();
 
     auto elapsed = timer1.elapsed();
 
@@ -128,7 +136,9 @@ void Experiment::parallel_kfold(mltk::Data<double> &data, size_t totalTasks, Fn 
     std::cout << "[" << data.name() << "]" << "Execution time: " << elapsed << " ms" << std::endl;
 }
 
-size_t Experiment::evaluate_fold(mltk::validation::TrainTestPair<double> fold, size_t k, std::map<std::string, std::shared_ptr<mltk::metrics::dist::BaseMatrix>> distances) {
+std::pair<size_t, std::vector<size_t>> Experiment::evaluate_fold(mltk::validation::TrainTestPair<double> fold, size_t k, 
+            std::map<std::string, std::shared_ptr<mltk::metrics::dist::BaseMatrix>> distances, std::ofstream &results_json) {
+    
     mltk::Timer timer;
     mltk::SimulatedAnnealing sa(fold.train, k, this->sa_folds, this->sa_temp, this->alpha, this->min_temp_iter);   
 
@@ -138,6 +148,7 @@ size_t Experiment::evaluate_fold(mltk::validation::TrainTestPair<double> fold, s
 
     auto results = sa.optimize();
     auto weights = results.first;
+    auto report = results.second;
 
     size_t sa_duration = timer.elapsed();
 
@@ -149,16 +160,26 @@ size_t Experiment::evaluate_fold(mltk::validation::TrainTestPair<double> fold, s
         knn_ensemb.setDistanceMatrix(matrix_pair.first, matrix_pair.second);
     }
 
+    std::vector<size_t> errors_ids;
     size_t errors = 0;
     for(auto& point: fold.test.points()) {
         double pred = knn_ensemb.evaluate(*point);
         
         if(pred != point->Y()) {
+            errors_ids.push_back(point->Id());
             errors++;
         }
     }
 
     double acc = 1.0 - (double)errors/fold.test.size();
 
-    return errors;
+    report["execution_time"] = sa_duration;
+    report["accuracy"] = acc;
+    report["errors"] = errors;
+    report["errors_ids"] = errors_ids;
+    report["fold"] = fold.fold;
+
+    results_json << report.dump(4) << std::endl;
+
+    return std::make_pair(errors, errors_ids);
 }
