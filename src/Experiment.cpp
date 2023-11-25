@@ -65,7 +65,7 @@ void Experiment::run() {
             }
 
             auto partial_kfold = [folds, k, distances, dataset_results_folder, this](const int a, const int b) {
-                std::vector<std::pair<size_t, std::vector<size_t>>> _errors(b - a);
+                std::vector<FoldResult> _errors(b - a);
                 for(size_t i = a; i < b; i++){
                     auto fold = folds[i];
 
@@ -81,11 +81,9 @@ void Experiment::run() {
                     fold.train.write(data_results_folder + "train", "csv");
                     fold.test.write(data_results_folder + "test", "csv");
 
-                    auto errors = this->evaluate_fold(fold, k, distances, json);
+                    auto results = this->evaluate_fold(fold, k, distances, json);
                     
-                    _errors[i - a].first = errors.first;
-                    _errors[i - a].second = errors.second;
-
+                    _errors[i - a] = results;
                     json.close();
                 }
                 return _errors;
@@ -103,7 +101,7 @@ void Experiment::parallel_kfold(mltk::Data<double> &data, size_t totalTasks, Fn 
     size_t numBatches = (totalTasks > this->threads) ? this->threads : totalTasks;
     size_t batchSize = std::ceil(totalTasks/double(numBatches));
 
-    mltk::Point<std::future<std::vector<std::pair<size_t, std::vector<size_t>>>>> futuresPool(numBatches);
+    mltk::Point<std::future<std::vector<FoldResult>>> futuresPool(numBatches);
     for(size_t i = 0; i < numBatches; i++){
         size_t start = i * batchSize;
         size_t end = start + batchSize;
@@ -111,22 +109,21 @@ void Experiment::parallel_kfold(mltk::Data<double> &data, size_t totalTasks, Fn 
         futuresPool[i] = std::async(std::launch::async, partial_kfold, start, end);
     }
 
+    mltk::Point<FoldResult> results(totalTasks);
     mltk::Point<size_t> errors(totalTasks);
-    std::vector<size_t> errors_ids;
     mltk::Timer timer1;
 
     for(size_t i = 0; i < futuresPool.size(); i++) {
         auto foldResult = futuresPool[i].get();
         
         for(size_t j = 0; j < foldResult.size(); j++) {
-            errors[i + j] = foldResult[j].first;
-            auto fold_errors_ids = foldResult[j].second;
-            errors_ids.insert(errors_ids.end(), fold_errors_ids.begin(), fold_errors_ids.end());
+            results[i + j] = foldResult[j];
+            errors[i + j] = foldResult[j].errors["sa"];
         }
     }
 
     size_t total_errors = errors.sum();
-    size_t accuracy = 1.0 - (double)total_errors/data.size();
+    size_t accuracy = 1.0 - total_errors/(double)data.size();
 
     auto elapsed = timer1.elapsed();
 
@@ -136,11 +133,12 @@ void Experiment::parallel_kfold(mltk::Data<double> &data, size_t totalTasks, Fn 
     std::cout << "[" << data.name() << "]" << "Execution time: " << elapsed << " ms" << std::endl;
 }
 
-std::pair<size_t, std::vector<size_t>> Experiment::evaluate_fold(mltk::validation::TrainTestPair<double> fold, size_t k, 
+FoldResult Experiment::evaluate_fold(mltk::validation::TrainTestPair<double> fold, size_t k, 
             std::map<std::string, std::shared_ptr<mltk::metrics::dist::BaseMatrix>> distances, std::ofstream &results_json) {
     
     mltk::Timer timer;
     mltk::SimulatedAnnealing sa(fold.train, k, this->sa_folds, this->sa_temp, this->alpha, this->min_temp_iter);   
+    FoldResult fold_results;
 
     for(auto& matrix_pair: distances) {
         sa.setDistanceMatrix(matrix_pair.first, matrix_pair.second);
@@ -150,7 +148,7 @@ std::pair<size_t, std::vector<size_t>> Experiment::evaluate_fold(mltk::validatio
     auto weights = results.first;
     auto report = results.second;
 
-    size_t sa_duration = timer.elapsed();
+    fold_results.sa_duration = timer.elapsed();
 
     mltk::ensemble::kNNEnsembleW<double> knn_ensemb(k);
     
@@ -160,26 +158,40 @@ std::pair<size_t, std::vector<size_t>> Experiment::evaluate_fold(mltk::validatio
         knn_ensemb.setDistanceMatrix(matrix_pair.first, matrix_pair.second);
     }
 
-    std::vector<size_t> errors_ids;
-    size_t errors = 0;
+    std::vector<std::string> metrics = knn_ensemb.metricsNames();
+    
     for(auto& point: fold.test.points()) {
         double pred = knn_ensemb.evaluate(*point);
         
         if(pred != point->Y()) {
-            errors_ids.push_back(point->Id());
-            errors++;
+            fold_results.errors_ids["sa"].push_back(point->Id());
+            fold_results.errors["sa"]++;
+        }
+
+        for(auto& metric: metrics) {
+            double pred = knn_ensemb.evaluate(*point, metric);
+            
+            if(pred != point->Y()) {
+                fold_results.errors_ids[metric].push_back(point->Id());
+                fold_results.errors[metric]++;
+            }
         }
     }
 
-    double acc = 1.0 - (double)errors/fold.test.size();
+    fold_results.weights = weights;
+    fold_results.fold = fold.fold;
+    fold_results.execution = fold.execution;
+    fold_results.k = k;
 
-    report["execution_time"] = sa_duration;
+    double acc = 1.0 - (double)fold_results.errors["sa"]/fold.test.size();
+
+    report["execution_time"] = fold_results.sa_duration;
     report["accuracy"] = acc;
-    report["errors"] = errors;
-    report["errors_ids"] = errors_ids;
+    report["errors"] = fold_results.errors["sa"];
+    report["errors_ids"] = fold_results.errors_ids["sa"];
     report["fold"] = fold.fold;
 
     results_json << report.dump(4) << std::endl;
 
-    return std::make_pair(errors, errors_ids);
+    return fold_results;
 }

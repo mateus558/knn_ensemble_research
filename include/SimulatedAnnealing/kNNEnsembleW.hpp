@@ -173,6 +173,18 @@ namespace mltk {
 
             mltk::Point<double> getWeights(){ return this->weights; }
 
+            double evaluate(const Point<double> &p, const std::string &metric) {
+                auto it = std::find(this->metrics.begin(), this->metrics.end(), metric);
+
+                if (it != this->metrics.end()) {
+                    auto idx = it - this->metrics.begin();
+                    auto learner = this->m_learners[idx];
+                    learner->setSamples(this->samples);
+                    return learner->evaluate(p);
+                }
+                return 0.0;
+            }
+
             double evaluate(const Point<double> &p, bool raw_value = false) override {
                 auto _classes = this->samples->classes();
                 mltk::Point<double> votes(_classes.size(), 0.0);

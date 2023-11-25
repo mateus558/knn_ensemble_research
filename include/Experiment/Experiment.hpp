@@ -4,6 +4,18 @@
 #include <CLI/CLI.hpp>
 
 
+class FoldResult {
+    public:
+        std::map<std::string, size_t> errors;
+        std::map<std::string, std::vector<size_t>> errors_ids;
+        std::map<std::string, double> accs;
+        mltk::Point<double> weights;
+        size_t fold;
+        size_t execution;
+        size_t k;
+        size_t sa_duration;
+};
+
 class Experiment: public CLI::App {
     private:
         std::string results_folder{"../results/"};
@@ -28,7 +40,7 @@ class Experiment: public CLI::App {
         void run();
 
     private:
-        std::pair<size_t, std::vector<size_t>> evaluate_fold(mltk::validation::TrainTestPair<double> fold, size_t k, std::map<std::string, std::shared_ptr<mltk::metrics::dist::BaseMatrix>> distances, std::ofstream &results_json);
+        FoldResult evaluate_fold(mltk::validation::TrainTestPair<double> fold, size_t k, std::map<std::string, std::shared_ptr<mltk::metrics::dist::BaseMatrix>> distances, std::ofstream &results_json);
 
         template< typename Fn >
         void parallel_kfold(mltk::Data<double> &data, size_t totalTasks, Fn partial_kfold); 
