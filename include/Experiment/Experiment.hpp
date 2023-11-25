@@ -43,5 +43,5 @@ class Experiment: public CLI::App {
         FoldResult evaluate_fold(mltk::validation::TrainTestPair<double> fold, size_t k, std::map<std::string, std::shared_ptr<mltk::metrics::dist::BaseMatrix>> distances, std::ofstream &results_json);
 
         template< typename Fn >
-        void parallel_kfold(mltk::Data<double> &data, size_t totalTasks, Fn partial_kfold); 
+        void parallel_kfold(mltk::Data<double> &data, size_t totalTasks, Fn partial_kfold, const std::string &kfold_results_folder); 
 };
