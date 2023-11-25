@@ -23,8 +23,8 @@ class Experiment: public CLI::App {
         size_t max_threads{std::thread::hardware_concurrency()};
         size_t threads{std::thread::hardware_concurrency()};
         
-        std::vector<size_t> ks = {1, 3, 5, 7};
-        std::vector<std::string> datasets = {"wine.data"};
+        std::vector<size_t> ks = {1};
+        std::vector<std::string> datasets = {"iris.data"};
         size_t n_folds{10};
         
         size_t sa_folds{10};

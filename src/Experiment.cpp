@@ -185,6 +185,13 @@ FoldResult Experiment::evaluate_fold(mltk::validation::TrainTestPair<double> fol
 
     double acc = 1.0 - (double)fold_results.errors["sa"]/fold.test.size();
 
+    fold_results.accs["sa"] = acc;
+    
+    for(auto& metric: metrics) {
+        acc = 1.0 - (double)fold_results.errors[metric]/fold.test.size();
+        fold_results.accs[metric] = acc;
+    }
+
     report["execution_time"] = fold_results.sa_duration;
     report["accuracy"] = acc;
     report["errors"] = fold_results.errors["sa"];
