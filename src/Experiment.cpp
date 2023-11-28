@@ -133,7 +133,7 @@ void Experiment::parallel_kfold(mltk::Data<double> &data, size_t totalTasks, Fn 
     }
 
     size_t total_errors = errors.sum();
-    size_t accuracy = 1.0 - total_errors/(double)data.size();
+    double accuracy = 1.0 - total_errors/(double)data.size();
 
     auto elapsed = timer1.elapsed();
 
@@ -141,25 +141,33 @@ void Experiment::parallel_kfold(mltk::Data<double> &data, size_t totalTasks, Fn 
 
     mltk::ensemble::kNNEnsembleW<double> knn_ensemb(3);
     std::vector<std::string> metrics = knn_ensemb.metricsNames();
-    
+    mltk::Point<double> individual_accs(metrics.size());
+
     json metrics_json;
 
     if(results.size() > 0) metrics_json["k"] = results[0].k;
 
+    size_t i = 0;
     for(auto& metric: metrics) {
         if(results.size() == 0) break;
 
         metrics_json[metric] = json();
         metrics_json[metric]["folds"] = json::array();
-
+        
+        double total_errors = 0;
         for(size_t i = 0; i < results.size(); i++) {
             metrics_json[metric]["folds"][i]["fold_id"] = results[i].fold;
             metrics_json[metric]["folds"][i]["execution"] = results[i].execution;
             metrics_json[metric]["folds"][i]["errors"] = results[i].errors[metric];
+            total_errors += results[i].errors[metric];
             metrics_json[metric]["folds"][i]["accuracy"] = results[i].accs[metric];
             metrics_json[metric]["folds"][i]["execution_time"] = results[i].sa_duration;
             metrics_json[metric]["folds"][i]["errors_ids"] = results[i].errors_ids[metric];
         }
+
+        individual_accs[i] = 1.0 - total_errors/(double)data.size();
+
+        i++;
     }
     
     kfold_results["execution_time"] = elapsed;
@@ -175,9 +183,11 @@ void Experiment::parallel_kfold(mltk::Data<double> &data, size_t totalTasks, Fn 
     result_json.close();
 
     std::cout << std::endl;
-    std::cout << "[" << data.name() << "]" << "Total errors: " << total_errors << std::endl;
-    std::cout << "[" << data.name() << "]" << "Accuracy: " << accuracy * 100 << std::endl;
-    std::cout << "[" << data.name() << "]" << "Execution time: " << elapsed << " ms" << std::endl;
+    
+    std::cout << "[" << data.name() << "] " << "Individual metrics accs: " << individual_accs*100 << std::endl;
+    std::cout << "[" << data.name() << "] " << "Total errors: " << total_errors << std::endl;
+    std::cout << "[" << data.name() << "] " << "Accuracy: " << accuracy * 100 << std::endl;
+    std::cout << "[" << data.name() << "] " << "Execution time: " << elapsed << " ms" << std::endl;
 }
 
 FoldResult Experiment::evaluate_fold(mltk::validation::TrainTestPair<double> fold, size_t k, 

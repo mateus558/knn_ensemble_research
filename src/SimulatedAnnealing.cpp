@@ -132,7 +132,7 @@ namespace mltk {
 
             // the main loop will run while the diference between the min and max avg of the last
             // minTempIter is greater than a threshould epslon
-            while(diff_avg > epslon){
+            while(diff_avg > epslon && best_eval > 0){
                 it++;
                 tit++;
 
